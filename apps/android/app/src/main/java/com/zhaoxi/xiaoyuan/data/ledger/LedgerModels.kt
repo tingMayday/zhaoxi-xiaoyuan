@@ -49,3 +49,10 @@ data class NewTransaction(
     val categoryId: String,
     val note: String = "",
 )
+
+@Serializable
+data class UpsertBudget(
+    val yearMonth: String,
+    val categoryKey: String = "total",
+    val amountCents: Int,
+)

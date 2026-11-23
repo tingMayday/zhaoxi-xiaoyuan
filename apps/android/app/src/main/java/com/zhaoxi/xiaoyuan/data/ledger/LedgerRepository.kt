@@ -7,4 +7,5 @@ class LedgerRepository(private val api: LedgerApi) {
         api.transactions(month = month, direction = direction?.ifBlank { null })
     suspend fun create(body: NewTransaction) = api.create(body)
     suspend fun remove(id: String) { api.remove(id) }
+    suspend fun upsertBudget(body: UpsertBudget) { api.upsertBudget(body) }
 }

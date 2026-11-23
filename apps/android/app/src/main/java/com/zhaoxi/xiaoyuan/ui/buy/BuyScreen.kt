@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,15 +29,19 @@ import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
-import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Line
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
+import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.util.yuan
 
 @Composable
 fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
 
     Column(
         modifier = Modifier
@@ -52,8 +57,16 @@ fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
         if (state.loading && state.board == null) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
+            state.board?.let { board ->
+                Text(
+                    "未买 ${board.openCount} 件 · 预估 ¥${yuan(board.estimateCents)} · 本月已买 ${board.boughtThisMonth}",
+                    color = Muted,
+                )
+            }
             AppField("名称", state.title, viewModel::setTitle)
+            AppField("数量", state.quantity, viewModel::setQuantity)
             AppField("预估金额", state.amount, viewModel::setAmount)
+            AppField("备注", state.note, viewModel::setNote)
             state.error?.let { Text(it, color = Accent) }
             Button(
                 onClick = viewModel::create,
@@ -66,7 +79,13 @@ fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
             Text("还没买", style = MaterialTheme.typography.headlineMedium)
             val open = viewModel.openItems()
             if (open.isEmpty()) EmptyBox("清单是空的。想到要买的，先写下来。")
-            else open.forEach { item -> BuyRow(item, buy = { viewModel.askBuy(item) }, remove = null) }
+            else open.forEach { item ->
+                BuyRow(
+                    item = item,
+                    buy = { viewModel.askBuy(item) },
+                    remove = { viewModel.askDelete(item) },
+                )
+            }
 
             Text("本月已买", style = MaterialTheme.typography.headlineMedium)
             val bought = viewModel.boughtItems()
@@ -109,7 +128,14 @@ private fun BuyRow(item: BuyItem, buy: (() -> Unit)?, remove: (() -> Unit)?) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(item.title)
-            Text("×${item.quantity.toInt().takeIf { item.quantity % 1.0 == 0.0 } ?: item.quantity}", color = Muted)
+            val qty = item.quantity.toInt().takeIf { item.quantity % 1.0 == 0.0 } ?: item.quantity
+            Text(
+                buildString {
+                    append("×$qty")
+                    if (item.note.isNotBlank()) append(" · ${item.note}")
+                },
+                color = Muted,
+            )
         }
         Text("¥$money")
         buy?.let { TextButton(onClick = it) { Text("买到了", color = Accent) } }

@@ -12,4 +12,13 @@ interface FitnessApi {
 
     @PUT("api/body-logs/{date}")
     suspend fun saveBodyLog(@Path("date") date: String, @Body body: BodyLogInput): ResponseBody
+
+    @PUT("api/fitness/profile")
+    suspend fun saveProfile(@Body body: FitnessProfileInput): FitnessProfile
+
+    @GET("api/week-plan")
+    suspend fun weekPlan(): List<WeekPlanItem>
+
+    @PUT("api/week-plan")
+    suspend fun saveWeekPlan(@Body body: ReplaceWeekPlan): List<WeekPlanItem>
 }

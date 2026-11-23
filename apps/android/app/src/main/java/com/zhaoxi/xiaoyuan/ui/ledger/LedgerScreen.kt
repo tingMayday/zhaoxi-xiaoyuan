@@ -42,7 +42,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Sand
 import com.zhaoxi.xiaoyuan.ui.util.yuan
 
 @Composable
-fun LedgerScreen(viewModel: LedgerViewModel) {
+fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val expenseCats = state.categories.filter { it.kind == state.direction }
 
@@ -57,6 +57,7 @@ fun LedgerScreen(viewModel: LedgerViewModel) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回首页", color = Accent) }
         Text("记账", color = Muted, style = MaterialTheme.typography.labelLarge)
         Text("花得明白", style = MaterialTheme.typography.headlineLarge)
 
@@ -74,6 +75,38 @@ fun LedgerScreen(viewModel: LedgerViewModel) {
                     MiniStat(modifier = Modifier.weight(1f), "收入", "¥${yuan(summary.incomeCents)}", Sand)
                     MiniStat(modifier = Modifier.weight(1f), "支出", "¥${yuan(summary.expenseCents)}", Sage)
                     MiniStat(modifier = Modifier.weight(1f), "结余", "¥${yuan(summary.balanceCents)}", Lilac)
+                }
+                val budgetHint = when {
+                    summary.totalBudgetCents == null -> "还没有月预算"
+                    summary.remainingCents != null -> "剩余 ¥${yuan(summary.remainingCents)} · 已用 ${((summary.usedRatio ?: 0.0) * 100).toInt()}%"
+                    else -> "月预算 ¥${yuan(summary.totalBudgetCents)}"
+                }
+                Text(budgetHint, color = Muted)
+                AppField("本月总预算", state.budget, viewModel::setBudget)
+                Button(
+                    onClick = viewModel::saveBudget,
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
+                ) { Text("保存预算") }
+
+                val spends = summary.categories.filter { it.amountCents > 0 }.take(6)
+                if (spends.isNotEmpty()) {
+                    Text("消费结构", style = MaterialTheme.typography.headlineMedium)
+                    spends.forEach { cat ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Card, RoundedCornerShape(12.dp))
+                                .border(1.dp, Line, RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(cat.name)
+                            Text("¥${yuan(cat.amountCents)}")
+                        }
+                    }
                 }
             }
 

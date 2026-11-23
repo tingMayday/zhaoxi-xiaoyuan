@@ -1,27 +1,14 @@
 package com.zhaoxi.xiaoyuan.ui.nav
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.ShowChart
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.zhaoxi.xiaoyuan.data.AppContainer
 import com.zhaoxi.xiaoyuan.ui.archive.ArchiveScreen
@@ -36,23 +23,14 @@ import com.zhaoxi.xiaoyuan.ui.ledger.LedgerScreen
 import com.zhaoxi.xiaoyuan.ui.ledger.LedgerViewModel
 import com.zhaoxi.xiaoyuan.ui.media.MediaScreen
 import com.zhaoxi.xiaoyuan.ui.media.MediaViewModel
-import com.zhaoxi.xiaoyuan.ui.more.MoreScreen
 import com.zhaoxi.xiaoyuan.ui.schedule.ScheduleScreen
 import com.zhaoxi.xiaoyuan.ui.schedule.ScheduleViewModel
 import com.zhaoxi.xiaoyuan.ui.settings.SettingsScreen
 import com.zhaoxi.xiaoyuan.ui.settings.SettingsViewModel
-import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
-import com.zhaoxi.xiaoyuan.ui.theme.Muted
-import com.zhaoxi.xiaoyuan.ui.theme.Paper
 import com.zhaoxi.xiaoyuan.ui.today.TodayScreen
 import com.zhaoxi.xiaoyuan.ui.today.TodayViewModel
-
-private data class TabItem(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-)
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScaffold(
@@ -60,109 +38,85 @@ fun HomeScaffold(
     onUnauthorized: () -> Unit,
 ) {
     val navController = rememberNavController()
-    val tabs = listOf(
-        TabItem(Routes.Today, "今日", Icons.Outlined.Home),
-        TabItem(Routes.Ledger, "记账", Icons.Outlined.Payments),
-        TabItem(Routes.Habits, "习惯", Icons.Outlined.CheckCircle),
-        TabItem(Routes.Fitness, "健身", Icons.Outlined.ShowChart),
-        TabItem(Routes.More, "更多", Icons.Outlined.MoreHoriz),
-    )
-    val tabRoutes = tabs.map { it.route }.toSet()
-    val backStack by navController.currentBackStackEntryAsState()
-    val current = backStack?.destination?.route
-    val showBottomBar = current in tabRoutes
+    val scope = rememberCoroutineScope()
+    val goBack: () -> Unit = { navController.popBackStack() }
+    val open: (String) -> Unit = { route -> navController.navigate(route) }
 
     Scaffold(
         containerColor = Card,
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(containerColor = Paper) {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = current == tab.route,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Accent,
-                                selectedTextColor = Accent,
-                                unselectedIconColor = Muted,
-                                unselectedTextColor = Muted,
-                                indicatorColor = Card,
-                            ),
-                        )
-                    }
-                }
-            }
-        },
+        modifier = Modifier.fillMaxSize(),
     ) { padding ->
         NavHost(
             navController = navController,
             startDestination = Routes.Today,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
         ) {
             composable(Routes.Today) {
                 val vm: TodayViewModel = viewModel(
                     factory = TodayViewModel.factory(
                         todayRepository = container.todayRepository,
+                        ledgerRepository = container.ledgerRepository,
+                        scheduleRepository = container.scheduleRepository,
+                        fitnessRepository = container.fitnessRepository,
+                        buyRepository = container.buyRepository,
+                        habitsRepository = container.habitsRepository,
                         onUnauthorized = {
                             container.authRepository.logout()
                             onUnauthorized()
                         },
                     ),
                 )
-                TodayScreen(vm)
+                TodayScreen(
+                    viewModel = vm,
+                    onOpenLedger = { open(Routes.Ledger) },
+                    onOpenHabits = { open(Routes.Habits) },
+                    onOpenFitness = { open(Routes.Fitness) },
+                    onOpenSchedule = { open(Routes.Schedule) },
+                    onOpenBuy = { open(Routes.Buy) },
+                    onOpenMedia = { open(Routes.Media) },
+                    onOpenArchive = { open(Routes.Archive) },
+                    onOpenSettings = { open(Routes.Settings) },
+                    onLogout = {
+                        scope.launch {
+                            container.authRepository.logout()
+                            onUnauthorized()
+                        }
+                    },
+                )
             }
             composable(Routes.Ledger) {
                 val vm: LedgerViewModel = viewModel(factory = LedgerViewModel.factory(container.ledgerRepository))
-                LedgerScreen(vm)
+                LedgerScreen(vm, onBack = goBack)
             }
             composable(Routes.Habits) {
                 val vm: HabitsViewModel = viewModel(factory = HabitsViewModel.factory(container.habitsRepository))
-                HabitsScreen(vm)
+                HabitsScreen(vm, onBack = goBack)
             }
             composable(Routes.Fitness) {
                 val vm: FitnessViewModel = viewModel(factory = FitnessViewModel.factory(container.fitnessRepository))
-                FitnessScreen(vm)
-            }
-            composable(Routes.More) {
-                MoreScreen(
-                    authRepository = container.authRepository,
-                    onOpenSchedule = { navController.navigate(Routes.Schedule) },
-                    onOpenBuy = { navController.navigate(Routes.Buy) },
-                    onOpenMedia = { navController.navigate(Routes.Media) },
-                    onOpenArchive = { navController.navigate(Routes.Archive) },
-                    onOpenSettings = { navController.navigate(Routes.Settings) },
-                    onLoggedOut = onUnauthorized,
-                )
+                FitnessScreen(vm, onBack = goBack)
             }
             composable(Routes.Schedule) {
                 val vm: ScheduleViewModel = viewModel(factory = ScheduleViewModel.factory(container.scheduleRepository))
-                ScheduleScreen(vm, onBack = { navController.popBackStack() })
+                ScheduleScreen(vm, onBack = goBack)
             }
             composable(Routes.Buy) {
                 val vm: BuyViewModel = viewModel(factory = BuyViewModel.factory(container.buyRepository))
-                BuyScreen(vm, onBack = { navController.popBackStack() })
+                BuyScreen(vm, onBack = goBack)
             }
             composable(Routes.Media) {
                 val vm: MediaViewModel = viewModel(factory = MediaViewModel.factory(container.mediaRepository))
-                MediaScreen(vm, onBack = { navController.popBackStack() })
+                MediaScreen(vm, onBack = goBack)
             }
             composable(Routes.Archive) {
                 val vm: ArchiveViewModel = viewModel(factory = ArchiveViewModel.factory(container.archiveRepository))
-                ArchiveScreen(vm, onBack = { navController.popBackStack() })
+                ArchiveScreen(vm, onBack = goBack)
             }
             composable(Routes.Settings) {
                 val vm: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container.authRepository))
-                SettingsScreen(vm, onBack = { navController.popBackStack() })
+                SettingsScreen(vm, onBack = goBack)
             }
         }
     }

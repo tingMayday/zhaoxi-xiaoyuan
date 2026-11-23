@@ -18,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,8 +39,12 @@ import com.zhaoxi.xiaoyuan.ui.theme.Sage
 import com.zhaoxi.xiaoyuan.ui.theme.Sand
 import kotlin.math.roundToInt
 
+private val weekdayLabels = listOf(
+    1 to "周一", 2 to "周二", 3 to "周三", 4 to "周四", 5 to "周五", 6 to "周六", 7 to "周日",
+)
+
 @Composable
-fun FitnessScreen(viewModel: FitnessViewModel) {
+fun FitnessScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val series = state.series
 
@@ -54,6 +59,7 @@ fun FitnessScreen(viewModel: FitnessViewModel) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回首页", color = Accent) }
         Text("健身", color = Muted, style = MaterialTheme.typography.labelLarge)
         Text("稳稳向前", style = MaterialTheme.typography.headlineLarge)
 
@@ -82,6 +88,31 @@ fun FitnessScreen(viewModel: FitnessViewModel) {
                 shape = RoundedCornerShape(999.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
             ) { Text("保存") }
+
+            Text("减脂目标", style = MaterialTheme.typography.headlineMedium)
+            AppField("起点体重 kg", state.startWeight, viewModel::setStartWeight)
+            AppField("目标体重 kg", state.targetWeight, viewModel::setTargetWeight)
+            AppField("开始日期 YYYY-MM-DD", state.startDate, viewModel::setStartDate)
+            AppField("每日摄入目标 kcal", state.targetIntake, viewModel::setTargetIntake)
+            Button(
+                onClick = viewModel::saveProfile,
+                enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(999.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
+            ) { Text("保存目标") }
+
+            Text("一周安排", style = MaterialTheme.typography.headlineMedium)
+            weekdayLabels.forEach { (day, label) ->
+                AppField(label, state.planDraft[day].orEmpty(), onChange = { viewModel.setPlanDay(day, it) })
+            }
+            Button(
+                onClick = viewModel::saveWeekPlan,
+                enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(999.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
+            ) { Text("保存一周") }
 
             Text("最近体重", style = MaterialTheme.typography.headlineMedium)
             val points = series?.points?.filter { it.weightKg != null }?.takeLast(10).orEmpty()

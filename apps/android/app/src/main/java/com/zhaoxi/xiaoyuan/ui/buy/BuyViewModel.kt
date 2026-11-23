@@ -20,6 +20,8 @@ data class BuyUiState(
     val board: BuyBoard? = null,
     val title: String = "",
     val amount: String = "",
+    val quantity: String = "1",
+    val note: String = "",
     val error: String? = null,
     val busy: Boolean = false,
     val pendingBuy: BuyItem? = null,
@@ -31,10 +33,10 @@ class BuyViewModel(private val repo: BuyRepository) : ViewModel() {
     val ui: StateFlow<BuyUiState> = _ui.asStateFlow()
     private val month = currentMonth()
 
-    init { refresh() }
-
     fun setTitle(v: String) = _ui.update { it.copy(title = v, error = null) }
     fun setAmount(v: String) = _ui.update { it.copy(amount = v) }
+    fun setQuantity(v: String) = _ui.update { it.copy(quantity = v) }
+    fun setNote(v: String) = _ui.update { it.copy(note = v) }
     fun askBuy(item: BuyItem) = _ui.update { it.copy(pendingBuy = item) }
     fun askDelete(item: BuyItem) = _ui.update { it.copy(pendingDelete = item) }
     fun cancelDialog() = _ui.update { it.copy(pendingBuy = null, pendingDelete = null) }
@@ -54,6 +56,11 @@ class BuyViewModel(private val repo: BuyRepository) : ViewModel() {
             _ui.update { it.copy(error = "请填写名称") }
             return
         }
+        val qty = state.quantity.trim().toDoubleOrNull() ?: 1.0
+        if (qty <= 0) {
+            _ui.update { it.copy(error = "数量需大于 0") }
+            return
+        }
         val cents = state.amount.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.let { Math.round(it * 100).toInt() } ?: 0
         if (state.amount.isNotBlank() && cents < 0) {
             _ui.update { it.copy(error = "金额无效") }
@@ -61,12 +68,19 @@ class BuyViewModel(private val repo: BuyRepository) : ViewModel() {
         }
         viewModelScope.launch {
             _ui.update { it.copy(busy = true, error = null) }
-            runCatching { repo.create(NewBuyItem(title = state.title.trim(), estimateCents = cents)) }
-                .onSuccess {
-                    _ui.update { it.copy(busy = false, title = "", amount = "") }
-                    refresh()
-                }
-                .onFailure { err -> _ui.update { it.copy(busy = false, error = err.toUserMessage()) } }
+            runCatching {
+                repo.create(
+                    NewBuyItem(
+                        title = state.title.trim(),
+                        quantity = qty,
+                        estimateCents = cents,
+                        note = state.note.trim(),
+                    ),
+                )
+            }.onSuccess {
+                _ui.update { it.copy(busy = false, title = "", amount = "", quantity = "1", note = "") }
+                refresh()
+            }.onFailure { err -> _ui.update { it.copy(busy = false, error = err.toUserMessage()) } }
         }
     }
 

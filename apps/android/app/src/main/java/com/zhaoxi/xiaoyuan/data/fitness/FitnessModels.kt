@@ -42,3 +42,22 @@ data class BodyLogInput(
     val intakeKcal: Int? = null,
     val exerciseMin: Int? = null,
 )
+
+@Serializable
+data class FitnessProfileInput(
+    val startWeightKg: Double,
+    val targetWeightKg: Double,
+    val startDate: String,
+    val targetIntakeKcal: Int,
+)
+
+@Serializable
+data class WeekPlanItem(
+    val weekday: Int,
+    val title: String,
+    val detail: String = "",
+    val sort: Int = 0,
+)
+
+@Serializable
+data class ReplaceWeekPlan(val items: List<WeekPlanItem>)

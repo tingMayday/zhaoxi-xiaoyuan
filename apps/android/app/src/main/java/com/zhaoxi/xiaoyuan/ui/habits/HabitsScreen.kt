@@ -3,8 +3,10 @@ package com.zhaoxi.xiaoyuan.ui.habits
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zhaoxi.xiaoyuan.data.habits.Habit
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
@@ -34,9 +37,11 @@ import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Line
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
+import com.zhaoxi.xiaoyuan.ui.theme.Paper
+import com.zhaoxi.xiaoyuan.ui.theme.Sage
 
 @Composable
-fun HabitsScreen(viewModel: HabitsViewModel) {
+fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val today = state.board?.today.orEmpty()
 
@@ -51,6 +56,7 @@ fun HabitsScreen(viewModel: HabitsViewModel) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回首页", color = Accent) }
         Text("习惯", color = Muted, style = MaterialTheme.typography.labelLarge)
         Text("一点点积累", style = MaterialTheme.typography.headlineLarge)
 
@@ -109,6 +115,7 @@ fun HabitsScreen(viewModel: HabitsViewModel) {
                             },
                             color = Muted,
                         )
+                        HabitHeatmap(habit = habit, days = state.board?.days.orEmpty())
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             when (habit.kind) {
                                 "check" -> TextButton(onClick = { viewModel.askCheck(habit) }) {
@@ -147,6 +154,36 @@ fun HabitsScreen(viewModel: HabitsViewModel) {
             onConfirm = viewModel::confirmArchive,
             onDismiss = viewModel::cancelDialog,
         )
+    }
+}
+
+@Composable
+private fun HabitHeatmap(habit: Habit, days: List<String>) {
+    if (days.isEmpty()) return
+    val byDate = habit.logs.associateBy { it.date }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("近 ${days.size} 天", color = Muted, style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            days.takeLast(30).forEach { date ->
+                val value = byDate[date]?.value ?: 0.0
+                val ratio = if (habit.dailyTarget <= 0) 0f else (value / habit.dailyTarget).toFloat().coerceIn(0f, 1f)
+                val color = when {
+                    ratio <= 0f -> Paper
+                    ratio < 1f -> Sage.copy(alpha = 0.45f + ratio * 0.35f)
+                    else -> Accent.copy(alpha = 0.85f)
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .background(color, RoundedCornerShape(3.dp))
+                        .border(0.5.dp, Line.copy(alpha = 0.5f), RoundedCornerShape(3.dp)),
+                )
+            }
+        }
     }
 }
 

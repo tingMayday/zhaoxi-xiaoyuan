@@ -28,6 +28,7 @@ data class LedgerUiState(
     val note: String = "",
     val categoryId: String = "",
     val occurredOn: String = todayDate(),
+    val budget: String = "",
     val error: String? = null,
     val busy: Boolean = false,
     val pendingDelete: Transaction? = null,
@@ -54,6 +55,7 @@ class LedgerViewModel(
     fun setNote(value: String) = _ui.update { it.copy(note = value) }
     fun setCategoryId(value: String) = _ui.update { it.copy(categoryId = value) }
     fun setOccurredOn(value: String) = _ui.update { it.copy(occurredOn = value) }
+    fun setBudget(value: String) = _ui.update { it.copy(budget = value, error = null) }
     fun askDelete(item: Transaction) = _ui.update { it.copy(pendingDelete = item) }
     fun cancelDelete() = _ui.update { it.copy(pendingDelete = null) }
 
@@ -73,10 +75,39 @@ class LedgerViewModel(
                         transactions = txs,
                         categories = cats,
                         categoryId = it.categoryId.ifBlank { filtered.firstOrNull()?.id.orEmpty() },
+                        budget = summary.totalBudgetCents?.let { cents ->
+                            if (cents % 100 == 0) (cents / 100).toString() else (cents / 100.0).toString()
+                        }.orEmpty(),
                     )
                 }
             }.onFailure { err ->
                 _ui.update { it.copy(loading = false, error = err.toUserMessage()) }
+            }
+        }
+    }
+
+    fun saveBudget() {
+        val state = _ui.value
+        val yuan = state.budget.trim().toDoubleOrNull()
+        if (yuan == null || yuan < 0) {
+            _ui.update { it.copy(error = "请填写有效预算金额") }
+            return
+        }
+        viewModelScope.launch {
+            _ui.update { it.copy(busy = true, error = null) }
+            runCatching {
+                repo.upsertBudget(
+                    com.zhaoxi.xiaoyuan.data.ledger.UpsertBudget(
+                        yearMonth = state.month,
+                        categoryKey = "total",
+                        amountCents = Math.round(yuan * 100).toInt(),
+                    ),
+                )
+            }.onSuccess {
+                _ui.update { it.copy(busy = false) }
+                refresh()
+            }.onFailure { err ->
+                _ui.update { it.copy(busy = false, error = err.toUserMessage()) }
             }
         }
     }

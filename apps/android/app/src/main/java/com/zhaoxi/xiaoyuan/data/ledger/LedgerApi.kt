@@ -27,4 +27,7 @@ interface LedgerApi {
 
     @DELETE("api/transactions/{id}")
     suspend fun remove(@Path("id") id: String): ResponseBody
+
+    @POST("api/budgets")
+    suspend fun upsertBudget(@Body body: UpsertBudget): ResponseBody
 }
