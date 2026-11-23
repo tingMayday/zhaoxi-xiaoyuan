@@ -1,0 +1,17 @@
+{
+  "name": "zhaoxi-xiaoyuan",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w @zhaoxi/api\" \"npm run dev -w @zhaoxi/web\"",
+    "dev:api": "npm run dev -w @zhaoxi/api",
+    "dev:web": "npm run dev -w @zhaoxi/web",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

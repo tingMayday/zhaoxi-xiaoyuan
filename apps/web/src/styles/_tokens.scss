@@ -1,0 +1,23 @@
+$narrow: 800px;
+$serif: "Palatino Linotype", Palatino, "Songti SC", SimSun, serif;
+$sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+:root {
+  --paper: #d5c8b4;
+  --paper-deep: #c9baa3;
+  --card: #fffdf8;
+  --ink: #2c261f;
+  --muted: #6d645a;
+  --line: #cfc1ab;
+  --accent: #6b4560;
+  --clay: #8a5a42;
+  --serif: #{$serif};
+  --sans: #{$sans};
+  --shadow: 0 10px 24px rgba(62, 42, 24, 0.08);
+}
+
+@mixin narrow {
+  @media (max-width: $narrow) {
+    @content;
+  }
+}

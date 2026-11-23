@@ -1,0 +1,21 @@
+node_modules
+.shots
+dist
+.env
+*.log
+.DS_Store
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+apps/web/dist
+
+# Android
+apps/android/local.properties
+apps/android/.gradle/
+apps/android/**/build/
+apps/android/*.iml
+apps/android/.idea/
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/

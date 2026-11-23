@@ -1,0 +1,51 @@
+:root {
+  --el-color-primary: #6b4560;
+  --el-color-primary-light-3: #8f6d86;
+  --el-color-primary-light-5: #b59aaf;
+  --el-color-primary-light-7: #d7c8d2;
+  --el-color-primary-light-8: #e7dce3;
+  --el-color-primary-light-9: #f6f0f3;
+  --el-color-primary-dark-2: #56374d;
+  --el-border-radius-base: 12px;
+  --el-font-family: var(--sans);
+  --el-text-color-primary: #2c261f;
+  --el-text-color-regular: #2c261f;
+  --el-fill-color-blank: #fff;
+  --el-bg-color: #fffdf8;
+  --el-border-color: #cfc1ab;
+  --el-border-color-hover: #b7a48a;
+  --el-button-bg-color: #fff;
+  --el-button-border-color: #cfc1ab;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.el-button.is-round { padding: 8px 16px; }
+
+.el-button--primary {
+  --el-button-text-color: #ffffff;
+  --el-button-hover-text-color: #ffffff;
+  --el-button-active-text-color: #ffffff;
+  --el-button-disabled-text-color: rgba(255, 255, 255, 0.72);
+  color: #ffffff;
+}
+
+.el-button--default {
+  --el-button-bg-color: #fff;
+  --el-button-text-color: var(--ink);
+  --el-button-border-color: var(--line);
+  --el-button-hover-bg-color: #fff;
+  --el-button-hover-border-color: var(--accent);
+  --el-button-hover-text-color: var(--accent);
+}

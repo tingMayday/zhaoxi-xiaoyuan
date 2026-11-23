@@ -1,0 +1,138 @@
+@use "tokens" as *;
+
+.quick,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0 14px;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  .el-button { width: 100%; height: auto; justify-content: flex-start; }
+
+  @include narrow { grid-template-columns: 1fr 1fr; }
+}
+
+.quick-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.3;
+
+  small { color: var(--muted); font-size: 12px; font-weight: 400; }
+}
+
+.el-button--primary .quick-label small { color: rgba(255, 250, 244, 0.82); }
+
+.composer,
+.stack,
+form.row,
+.week {
+  margin: 8px 0 4px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+
+.composer,
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.stack .row,
+.week {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.week { display: grid; }
+
+.entry-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 18px;
+  align-items: end;
+  margin: 8px 0 4px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+
+  .note { grid-column: span 2; }
+  .primary { grid-column: 1 / -1; justify-self: start; }
+
+  @include narrow {
+    grid-template-columns: 1fr 1fr;
+
+    .note,
+    .primary { grid-column: 1 / -1; }
+  }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+  align-items: flex-end;
+
+  .field { flex: 1 1 180px; max-width: none; }
+  &.compact .field { flex: 1 1 160px; max-width: 240px; }
+
+  @include narrow {
+    .field { flex-basis: 100%; max-width: none; }
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  &.short { max-width: 200px; }
+}
+
+.label,
+.facts dt,
+.numbers dt { color: var(--muted); font-size: 13px; }
+
+.field :is(.el-input, .el-select, .el-textarea, .el-date-editor) { width: 100%; }
+
+input:not([class*='el-']),
+select:not([class*='el-']),
+textarea:not([class*='el-']) {
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+
+  &:focus { border-color: var(--accent); }
+}
+
+textarea { min-height: 72px; resize: vertical; }
+
+.entry-form > .primary,
+.stack > .primary { justify-self: start; }
+.row > .primary { flex: 0 0 auto; margin-bottom: 1px; }
+
+.stars button {
+  padding: 0 2px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+
+  &.on { color: var(--clay); }
+}

@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum CategoryKind {
+  income
+  expense
+}
+
+enum HabitKind {
+  check
+  count
+  value
+}
+
+enum ScheduleStatus {
+  open
+  done
+}
+
+enum BuyStatus {
+  open
+  bought
+}
+
+enum MediaKind {
+  book
+  film
+  series
+  album
+}
+
+enum MediaStatus {
+  want
+  doing
+  done
+  dropped
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("")
+  timezone     String   @default("Asia/Shanghai")
+  heightCm     Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  categories    Category[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  habits        Habit[]
+  habitLogs     HabitLog[]
+  bodyLogs      BodyLog[]
+  fitness       FitnessProfile?
+  weekPlan      WeekPlanItem[]
+  scheduleItems ScheduleItem[]
+  buyItems      BuyItem[]
+  mediaItems    MediaItem[]
+}
+
+model Category {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  name         String
+  kind         CategoryKind
+  archived     Boolean      @default(false)
+  sort         Int          @default(0)
+  transactions Transaction[]
+
+  @@index([userId, kind])
+}
+
+model Transaction {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  occurredOn  String       @db.Char(10)
+  direction   CategoryKind
+  amountCents Int
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  note        String       @default("") @db.VarChar(500)
+  createdAt   DateTime     @default(now())
+
+  @@index([userId, occurredOn])
+}
+
+model Budget {
+  id          String @id @default(cuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+  yearMonth   String @db.Char(7)
+  categoryKey String
+  amountCents Int
+
+  @@unique([userId, yearMonth, categoryKey])
+}
+
+model Habit {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  name        String
+  kind        HabitKind
+  unit        String    @default("")
+  dailyTarget Float     @default(1)
+  sort        Int       @default(0)
+  archived    Boolean   @default(false)
+  logs        HabitLog[]
+
+  @@index([userId, archived])
+}
+
+model HabitLog {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  date    String @db.Char(10)
+  value   Float
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+model BodyLog {
+  id          String @id @default(cuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+  date        String @db.Char(10)
+  weightKg    Float?
+  bodyFatPct  Float?
+  intakeKcal  Int?
+  exerciseMin Int?
+
+  @@unique([userId, date])
+}
+
+model FitnessProfile {
+  id               String @id @default(cuid())
+  userId           String @unique
+  user             User   @relation(fields: [userId], references: [id])
+  startWeightKg    Float
+  targetWeightKg   Float
+  startDate        String @db.Char(10)
+  targetIntakeKcal Int    @default(1800)
+}
+
+model WeekPlanItem {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  weekday Int
+  title   String
+  detail  String @default("") @db.VarChar(500)
+  sort    Int    @default(0)
+
+  @@index([userId, weekday])
+}
+
+model ScheduleItem {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  title     String
+  dueOn     String         @db.Char(10)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  allDay    Boolean        @default(true)
+  remindAt  DateTime?
+  status    ScheduleStatus @default(open)
+  note      String         @default("") @db.VarChar(500)
+  createdAt DateTime       @default(now())
+
+  @@index([userId, dueOn])
+}
+
+model BuyItem {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  title         String
+  quantity      Float     @default(1)
+  estimateCents Int       @default(0)
+  status        BuyStatus @default(open)
+  boughtOn      String?   @db.Char(10)
+  note          String    @default("") @db.VarChar(500)
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, status])
+}
+
+model MediaItem {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  kind       MediaKind
+  title      String
+  creator    String      @default("")
+  coverUrl   String      @default("")
+  status     MediaStatus @default(want)
+  rating     Int?
+  note       String      @default("") @db.VarChar(500)
+  finishedOn String?     @db.Char(10)
+  createdAt  DateTime    @default(now())
+
+  @@index([userId, status])
+}
