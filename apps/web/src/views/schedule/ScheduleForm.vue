@@ -2,7 +2,7 @@
   <form class="row" @submit.prevent="submit">
     <Field label="事项"><el-input v-model="form.title" /></Field>
     <Field label="日期"><el-date-picker v-model="form.dueOn" type="date" value-format="YYYY-MM-DD" /></Field>
-    <Field label="开始"><el-date-picker v-model="form.startsAt" type="datetime" value-format="YYYY-MM-DDTHH:mm" /></Field>
+    <Field label="提醒"><el-date-picker v-model="form.remindAt" type="datetime" value-format="YYYY-MM-DDTHH:mm" /></Field>
     <Field label="备注"><el-input v-model="form.note" /></Field>
     <el-button class="primary" type="primary" native-type="submit" round>安排</el-button>
   </form>
@@ -13,11 +13,19 @@ import { reactive, watch } from 'vue';
 import Field from '../../components/Field.vue';
 import { bindDraft } from '../../utils';
 
+export type ScheduleFormPayload = {
+  title: string;
+  dueOn: string;
+  remindAt: string;
+  note: string;
+};
+
 const props = defineProps<{
   today: string;
-  save: (payload: { title: string; dueOn: string; startsAt: string; note: string }) => Promise<void>;
+  save: (payload: ScheduleFormPayload) => Promise<void>;
 }>();
-const form = reactive({ title: '', dueOn: '', startsAt: '', note: '' });
+
+const form = reactive({ title: '', dueOn: '', remindAt: '', note: '' });
 bindDraft('zhaoxi-draft-schedule', form);
 
 watch(() => props.today, (today) => {
@@ -28,6 +36,6 @@ async function submit() {
   await props.save({ ...form });
   form.title = '';
   form.note = '';
-  form.startsAt = '';
+  form.remindAt = '';
 }
 </script>

@@ -27,6 +27,8 @@
   <form v-if="panel === 'schedule'" class="composer row animate__animated animate__fadeIn" @submit.prevent="submitSchedule">
     <Field label="事项"><el-input v-model="schedule.title" /></Field>
     <Field label="日期"><el-date-picker v-model="schedule.dueOn" type="date" value-format="YYYY-MM-DD" /></Field>
+    <Field label="提醒"><el-date-picker v-model="schedule.remindAt" type="datetime" value-format="YYYY-MM-DDTHH:mm" /></Field>
+    <Field label="备注"><el-input v-model="schedule.note" /></Field>
     <el-button class="primary" type="primary" native-type="submit" round>安排</el-button>
   </form>
   <form v-if="panel === 'body'" class="composer row animate__animated animate__fadeIn" @submit.prevent="submitBody">
@@ -50,17 +52,24 @@ const props = defineProps<{
   categories: { id: string; name: string }[];
   date: string;
   saveExpense: (payload: { amount: string; categoryId: string; note: string }) => Promise<void>;
-  saveSchedule: (payload: { title: string; dueOn: string }) => Promise<void>;
+  saveSchedule: (payload: {
+    title: string;
+    dueOn: string;
+    remindAt: string;
+    note: string;
+  }) => Promise<void>;
   saveBody: (payload: { weight: string; intake: string }) => Promise<void>;
   saveBuy: (payload: { title: string; amount: string }) => Promise<void>;
 }>();
 
 const panel = ref('');
 const expense = reactive({ amount: '', categoryId: '', note: '' });
-const schedule = reactive({ title: '', dueOn: '' });
+const schedule = reactive({ title: '', dueOn: '', remindAt: '', note: '' });
 const body = reactive({ weight: '', intake: '' });
 const buy = reactive({ title: '', amount: '' });
 bindDraft('zhaoxi-draft-today', { expense, schedule, body, buy });
+
+
 
 watch(() => props.date, (date) => {
   if (date && !schedule.dueOn) schedule.dueOn = date;
@@ -81,6 +90,8 @@ async function submitExpense() {
 async function submitSchedule() {
   await props.saveSchedule({ ...schedule });
   schedule.title = '';
+  schedule.remindAt = '';
+  schedule.note = '';
 }
 async function submitBody() {
   await props.saveBody({ ...body });

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.ui.common.AppField
+import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -37,9 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回", color = Accent) }
-        Text("设置", color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text("院主资料", style = MaterialTheme.typography.headlineLarge)
+        PageHeader(onBack = onBack, eyebrow = "设置", title = "院主资料")
 
         if (state.loading) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))

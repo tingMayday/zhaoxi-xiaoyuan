@@ -39,8 +39,16 @@ fun HomeScaffold(
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
-    val goBack: () -> Unit = { navController.popBackStack() }
-    val open: (String) -> Unit = { route -> navController.navigate(route) }
+    val goBack: () -> Unit = {
+        if (!navController.popBackStack(Routes.Today, inclusive = false)) {
+            navController.popBackStack()
+        }
+    }
+    val open: (String) -> Unit = { route ->
+        navController.navigate(route) {
+            launchSingleTop = true
+        }
+    }
 
     Scaffold(
         containerColor = Card,
@@ -62,6 +70,7 @@ fun HomeScaffold(
                         fitnessRepository = container.fitnessRepository,
                         buyRepository = container.buyRepository,
                         habitsRepository = container.habitsRepository,
+                        reminders = container.reminderScheduler,
                         onUnauthorized = {
                             container.authRepository.logout()
                             onUnauthorized()
@@ -99,7 +108,12 @@ fun HomeScaffold(
                 FitnessScreen(vm, onBack = goBack)
             }
             composable(Routes.Schedule) {
-                val vm: ScheduleViewModel = viewModel(factory = ScheduleViewModel.factory(container.scheduleRepository))
+                val vm: ScheduleViewModel = viewModel(
+                    factory = ScheduleViewModel.factory(
+                        container.scheduleRepository,
+                        container.reminderScheduler,
+                    ),
+                )
                 ScheduleScreen(vm, onBack = goBack)
             }
             composable(Routes.Buy) {

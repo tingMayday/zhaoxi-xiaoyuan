@@ -10,10 +10,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import Notice from '../../components/Notice.vue';
-import { createSchedule, fetchSchedule, removeSchedule, updateSchedule, type ScheduleBoard } from '../../http/api';
+import {
+  createSchedule,
+  fetchSchedule,
+  removeSchedule,
+  scheduleLocalToIso,
+  updateSchedule,
+  type ScheduleBoard,
+} from '../../http/api';
 import { confirmAction } from '../../utils';
 import PageHeading from '../../components/PageHeading.vue';
-import ScheduleForm from './ScheduleForm.vue';
+import ScheduleForm, { type ScheduleFormPayload } from './ScheduleForm.vue';
 import ScheduleGroups from './ScheduleGroups.vue';
 
 const data = ref<ScheduleBoard | null>(null);
@@ -43,15 +50,20 @@ function shift(iso: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-async function create(payload: { title: string; dueOn: string; startsAt: string; note: string }) {
+async function create(payload: ScheduleFormPayload) {
   error.value = '';
+  const remindAt = scheduleLocalToIso(payload.remindAt);
+  if (payload.remindAt && !remindAt) {
+    error.value = '提醒时间格式不正确';
+    throw new Error(error.value);
+  }
   try {
     await createSchedule({
       title: payload.title,
       dueOn: payload.dueOn,
       note: payload.note,
-      startsAt: payload.startsAt ? new Date(payload.startsAt).toISOString() : undefined,
-      allDay: !payload.startsAt,
+      remindAt,
+      allDay: true,
     });
     await load();
   } catch (err) {

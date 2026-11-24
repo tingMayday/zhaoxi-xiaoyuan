@@ -95,7 +95,8 @@ import { useRoute } from 'vue-router';
 import Notice from '../../components/Notice.vue';
 import StatGrid from '../../components/StatGrid.vue';
 import { centsFromYuan, centsFromYuanAllowZero, dateLabel, yuan } from '../../utils';
-import { createBuyItem, createSchedule, createTransaction, fetchSeries, fetchSummary, fetchToday, listCategories, saveBodyLog, saveHabitLog, updateSchedule, type Category, type FinanceSummary, type FitnessSeries, type TodayHabit, type TodayOverview, type TodayTask } from '../../http/api';
+import { createBuyItem, createSchedule, createTransaction, fetchSeries, fetchSummary, fetchToday, listCategories, saveBodyLog, saveHabitLog, scheduleLocalToIso, updateSchedule, type Category, type FinanceSummary, type FitnessSeries, type TodayHabit, type TodayOverview, type TodayTask } from '../../http/api';
+
 import { confirmAction } from '../../utils';
 import TodayCharts from './TodayCharts.vue';
 import TodayQuick from './TodayQuick.vue';
@@ -175,8 +176,19 @@ function addExpense(payload: { amount: string; categoryId: string; note: string 
   }));
 }
 
-function addSchedule(payload: { title: string; dueOn: string }) {
-  return run(() => createSchedule(payload));
+function addSchedule(payload: { title: string; dueOn: string; remindAt: string; note: string }) {
+  const remindAt = scheduleLocalToIso(payload.remindAt);
+  if (payload.remindAt && !remindAt) {
+    error.value = '提醒时间格式不正确';
+    return Promise.reject(new Error(error.value));
+  }
+  return run(() => createSchedule({
+    title: payload.title,
+    dueOn: payload.dueOn,
+    note: payload.note,
+    remindAt,
+    allDay: true,
+  }));
 }
 
 function addBody(payload: { weight: string; intake: string }) {

@@ -12,9 +12,12 @@ import com.zhaoxi.xiaoyuan.data.media.MediaRepository
 import com.zhaoxi.xiaoyuan.data.network.NetworkModule
 import com.zhaoxi.xiaoyuan.data.schedule.ScheduleRepository
 import com.zhaoxi.xiaoyuan.data.today.TodayRepository
+import com.zhaoxi.xiaoyuan.notify.ReminderNotifier
+import com.zhaoxi.xiaoyuan.notify.ReminderScheduler
 
 class AppContainer(context: Context) {
-    val tokenStore = TokenStore(context.applicationContext)
+    private val appContext = context.applicationContext
+    val tokenStore = TokenStore(appContext)
     private val network = NetworkModule(tokenStore)
     val authRepository = AuthRepository(network.authApi, tokenStore)
     val todayRepository = TodayRepository(network.todayApi)
@@ -25,4 +28,7 @@ class AppContainer(context: Context) {
     val buyRepository = BuyRepository(network.buyApi)
     val mediaRepository = MediaRepository(network.mediaApi)
     val archiveRepository = ArchiveRepository(network.archiveApi)
+    val reminderScheduler = ReminderScheduler(appContext).also {
+        ReminderNotifier.ensureChannel(appContext)
+    }
 }

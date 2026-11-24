@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,25 +13,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.data.today.TodayOverview
 import com.zhaoxi.xiaoyuan.ui.common.AppField
@@ -38,6 +42,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Blush
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Clay
+import com.zhaoxi.xiaoyuan.ui.theme.Ink
 import com.zhaoxi.xiaoyuan.ui.theme.Lilac
 import com.zhaoxi.xiaoyuan.ui.theme.Line
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
@@ -62,7 +67,8 @@ fun TodayScreen(
 ) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    // 从子页返回或切回前台时刷新首页总览
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
 
@@ -131,35 +137,20 @@ fun TodayScreen(
 
                 if (data.recent.isNotEmpty()) {
                     SectionLabel("最近")
-                    data.recent.take(3).forEach { item ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(kindLabel(item.kind), color = Muted, modifier = Modifier.weight(0.2f))
-                            Text(
-                                item.title,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(item.value, color = Muted)
-                        }
-                    }
-                    TextButton(onClick = onOpenArchive, modifier = Modifier.align(Alignment.Start)) {
-                        Text("查看档案", color = Accent)
-                    }
+                    RecentList(
+                        items = data.recent.take(4),
+                        onOpenArchive = onOpenArchive,
+                    )
                 }
 
-                TextButton(
+                SoftButton(
+                    label = "离开小院",
                     onClick = onLogout,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) {
-                    Text("离开小院", color = Muted)
-                }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 8.dp),
+                    muted = true,
+                )
             }
         }
     }
@@ -308,17 +299,36 @@ private fun ModuleGrid(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 row.forEach { item ->
-                    Column(
+                    Row(
                         modifier = Modifier
                             .weight(1f)
-                            .background(item.background, RoundedCornerShape(18.dp))
-                            .border(1.dp, Line.copy(alpha = 0.7f), RoundedCornerShape(18.dp))
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(item.background)
+                            .border(1.dp, Line.copy(alpha = 0.55f), RoundedCornerShape(18.dp))
                             .clickable(onClick = item.onClick)
                             .padding(horizontal = 14.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Text(item.title, style = MaterialTheme.typography.titleLarge)
-                        Text(item.metric, color = Muted, style = MaterialTheme.typography.bodyLarge)
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(Accent.copy(alpha = 0.55f)),
+                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Text(item.title, style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                item.metric,
+                                color = Muted,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
@@ -347,47 +357,47 @@ private fun TodayFocus(
     val habits = data.habits.items.take(4)
 
     if (openTasks.isEmpty() && habits.isEmpty()) {
-        Text("今天还空着，先从上面记一件小事。", color = Muted, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            "今天还空着，先从上面记一件小事。",
+            color = Muted,
+            style = MaterialTheme.typography.bodyLarge,
+        )
         return
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Card, RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(18.dp))
+            .background(Card)
             .border(1.dp, Line, RoundedCornerShape(18.dp))
-            .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (openTasks.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("待办", color = Muted, style = MaterialTheme.typography.labelLarge)
-                TextButton(onClick = onOpenSchedule) { Text("全部", color = Accent) }
-            }
+            FocusGroupHeader(label = "待办", action = "全部", onAction = onOpenSchedule)
             openTasks.forEach { task ->
                 FocusRow(
                     title = task.title,
                     detail = task.note.ifBlank { "今天" },
                     action = "完成",
+                    done = false,
                     onAction = { onFinishTask(task) },
                 )
             }
         }
 
         if (habits.isNotEmpty()) {
-            if (openTasks.isNotEmpty()) Spacer(Modifier.height(6.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("习惯", color = Muted, style = MaterialTheme.typography.labelLarge)
-                TextButton(onClick = onOpenHabits) { Text("全部", color = Accent) }
+            if (openTasks.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
+                        .height(1.dp)
+                        .background(Line.copy(alpha = 0.7f)),
+                )
             }
+            FocusGroupHeader(label = "习惯", action = "全部", onAction = onOpenHabits)
             habits.forEach { habit ->
                 val done = habit.value >= habit.dailyTarget
                 FocusRow(
@@ -399,11 +409,40 @@ private fun TodayFocus(
                     },
                     action = if (habit.kind == "check") {
                         if (done) "已完成" else "打卡"
-                    } else null,
-                    onAction = if (habit.kind == "check") {{ onCheckHabit(habit) }} else null,
+                    } else {
+                        null
+                    },
+                    done = done && habit.kind == "check",
+                    onAction = if (habit.kind == "check" && !done) {
+                        { onCheckHabit(habit) }
+                    } else {
+                        null
+                    },
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun FocusGroupHeader(label: String, action: String, onAction: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = Muted, style = MaterialTheme.typography.labelLarge)
+        Text(
+            action,
+            color = Accent,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(onClick = onAction)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        )
     }
 }
 
@@ -412,22 +451,97 @@ private fun FocusRow(
     title: String,
     detail: String,
     action: String?,
+    done: Boolean,
     onAction: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (done) Sage.copy(alpha = 0.55f) else Paper.copy(alpha = 0.35f))
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (done) Sage else Accent.copy(alpha = 0.7f)),
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = if (done) Muted else Ink,
+            )
             Text(detail, color = Muted, style = MaterialTheme.typography.bodyMedium)
         }
-        if (action != null && onAction != null) {
-            TextButton(onClick = onAction) { Text(action, color = Accent) }
+        when {
+            done && action != null -> {
+                Text(
+                    action,
+                    color = Muted,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .background(Card, RoundedCornerShape(999.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+            action != null && onAction != null -> {
+                PillButton(label = action, onClick = onAction)
+            }
         }
+    }
+}
+
+@Composable
+private fun RecentList(
+    items: List<com.zhaoxi.xiaoyuan.data.today.TodayRecent>,
+    onOpenArchive: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Card)
+            .border(1.dp, Line, RoundedCornerShape(18.dp))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        items.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Paper.copy(alpha = 0.35f))
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    kindLabel(item.kind),
+                    color = Accent,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .background(kindTint(item.kind), RoundedCornerShape(999.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+                Text(
+                    item.title,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(item.value, color = Muted, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        SoftButton(
+            label = "查看档案",
+            onClick = onOpenArchive,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -445,20 +559,27 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         listOf("ledger" to "记一笔", "schedule" to "排日程", "body" to "记体重", "buy" to "待买").forEach { (id, label) ->
-            FilterChip(
-                selected = state.panel == id,
-                onClick = { viewModel.togglePanel(id) },
-                label = { Text(label) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Accent,
-                    selectedLabelColor = OnAccent,
-                ),
+            val selected = state.panel == id
+            Text(
+                text = label,
+                color = if (selected) OnAccent else Ink,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(if (selected) Accent else Paper.copy(alpha = 0.55f))
+                    .border(
+                        width = 1.dp,
+                        color = if (selected) Accent else Line,
+                        shape = RoundedCornerShape(999.dp),
+                    )
+                    .clickable { viewModel.togglePanel(id) }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
             )
         }
     }
 
     when (state.panel) {
-        "ledger" -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        "ledger" -> QuickForm {
             AppField("金额", state.amount, viewModel::setAmount)
             if (state.categories.isNotEmpty()) {
                 Row(
@@ -466,14 +587,16 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     state.categories.take(6).forEach { cat ->
-                        FilterChip(
-                            selected = state.categoryId == cat.id,
-                            onClick = { viewModel.setCategoryId(cat.id) },
-                            label = { Text(cat.name) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Accent,
-                                selectedLabelColor = OnAccent,
-                            ),
+                        val selected = state.categoryId == cat.id
+                        Text(
+                            text = cat.name,
+                            color = if (selected) OnAccent else Ink,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(if (selected) Accent else Sand.copy(alpha = 0.7f))
+                                .clickable { viewModel.setCategoryId(cat.id) }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                         )
                     }
                 }
@@ -481,17 +604,19 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
             AppField("备注", state.note, viewModel::setNote)
             PrimaryAction("记下", enabled = !state.busy, onClick = viewModel::saveExpense)
         }
-        "schedule" -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        "schedule" -> QuickForm {
             AppField("事项", state.scheduleTitle, viewModel::setScheduleTitle)
             AppField("日期 YYYY-MM-DD", state.scheduleDueOn, viewModel::setScheduleDueOn)
+            AppField("提醒 YYYY-MM-DD HH:mm", state.scheduleRemindAt, viewModel::setScheduleRemindAt)
+            AppField("备注", state.scheduleNote, viewModel::setScheduleNote)
             PrimaryAction("安排", enabled = !state.busy, onClick = viewModel::saveSchedule)
         }
-        "body" -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        "body" -> QuickForm {
             AppField("体重 kg", state.weight, viewModel::setWeight)
             AppField("摄入 kcal", state.intake, viewModel::setIntake)
             PrimaryAction("记下", enabled = !state.busy, onClick = viewModel::saveBody)
         }
-        "buy" -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        "buy" -> QuickForm {
             AppField("想买", state.buyTitle, viewModel::setBuyTitle)
             AppField("估价", state.buyAmount, viewModel::setBuyAmount)
             PrimaryAction("放入清单", enabled = !state.busy, onClick = viewModel::saveBuy)
@@ -500,14 +625,83 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
 }
 
 @Composable
+private fun QuickForm(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Card)
+            .border(1.dp, Line, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        content = content,
+    )
+}
+
+@Composable
 private fun PrimaryAction(label: String, enabled: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(999.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
-    ) { Text(label) }
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Accent,
+            contentColor = OnAccent,
+            disabledContainerColor = Accent.copy(alpha = 0.35f),
+            disabledContentColor = OnAccent.copy(alpha = 0.8f),
+        ),
+    ) { Text(label, style = MaterialTheme.typography.titleMedium) }
+}
+
+@Composable
+private fun PillButton(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        color = OnAccent,
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Accent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun SoftButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    muted: Boolean = false,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, if (muted) Line.copy(alpha = 0.7f) else Line, RoundedCornerShape(14.dp))
+            .background(if (muted) Card else Paper.copy(alpha = 0.4f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (muted) Muted else Accent,
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+private fun kindTint(kind: String): Color = when (kind) {
+    "finance" -> Sand
+    "health" -> Blush
+    "schedule" -> Lilac
+    "buy" -> Paper
+    "habit" -> Sage
+    else -> Paper.copy(alpha = 0.5f)
 }
 
 private fun kindLabel(kind: String) = when (kind) {

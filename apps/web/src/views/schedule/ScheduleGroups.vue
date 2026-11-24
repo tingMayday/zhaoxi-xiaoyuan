@@ -14,15 +14,26 @@
 <script setup lang="ts">
 import Notice from '../../components/Notice.vue';
 import RecordList from '../../components/RecordList.vue';
+import { scheduleClock, type ScheduleItem } from '../../http/apis/schedule';
 
-interface Item { id: string; title: string; dueOn: string; status: 'open' | 'done'; note: string }
-defineProps<{ groups: { title: string; empty: string; items: Item[] }[] }>();
+defineProps<{ groups: { title: string; empty: string; items: ScheduleItem[] }[] }>();
 defineEmits<{ toggle: [id: string]; remove: [id: string] }>();
 
-function rows(items: Item[]) {
-  return items.map((item) => ({ id: item.id, title: item.title, meta: item.dueOn.slice(5), note: item.note }));
+function rows(items: ScheduleItem[]) {
+  return items.map((item) => {
+    const bits = [item.dueOn.slice(5)];
+    const remind = scheduleClock(item.remindAt);
+    if (remind) bits.push(`提醒 ${remind}`);
+    return {
+      id: item.id,
+      title: item.title,
+      meta: bits.join(' · '),
+      note: item.note,
+    };
+  });
 }
-function statusOf(items: Item[], id: string) {
+
+function statusOf(items: ScheduleItem[], id: string) {
   return items.find((item) => item.id === id)?.status === 'done' ? '已完成' : '完成';
 }
 </script>

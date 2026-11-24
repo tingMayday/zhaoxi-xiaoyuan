@@ -18,6 +18,8 @@ import com.zhaoxi.xiaoyuan.data.today.TodayHabit
 import com.zhaoxi.xiaoyuan.data.today.TodayOverview
 import com.zhaoxi.xiaoyuan.data.today.TodayRepository
 import com.zhaoxi.xiaoyuan.data.today.TodayTask
+import com.zhaoxi.xiaoyuan.notify.ReminderScheduler
+import com.zhaoxi.xiaoyuan.notify.localDateTimeToIso
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +37,8 @@ data class TodayUiState(
     val note: String = "",
     val scheduleTitle: String = "",
     val scheduleDueOn: String = "",
+    val scheduleRemindAt: String = "",
+    val scheduleNote: String = "",
     val weight: String = "",
     val intake: String = "",
     val buyTitle: String = "",
@@ -52,6 +56,7 @@ class TodayViewModel(
     private val fitnessRepository: FitnessRepository,
     private val buyRepository: BuyRepository,
     private val habitsRepository: HabitsRepository,
+    private val reminders: ReminderScheduler,
     private val onUnauthorized: suspend () -> Unit,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(TodayUiState())
@@ -66,6 +71,8 @@ class TodayViewModel(
     fun setNote(v: String) = _ui.update { it.copy(note = v) }
     fun setScheduleTitle(v: String) = _ui.update { it.copy(scheduleTitle = v, error = null) }
     fun setScheduleDueOn(v: String) = _ui.update { it.copy(scheduleDueOn = v) }
+    fun setScheduleRemindAt(v: String) = _ui.update { it.copy(scheduleRemindAt = v, error = null) }
+    fun setScheduleNote(v: String) = _ui.update { it.copy(scheduleNote = v) }
     fun setWeight(v: String) = _ui.update { it.copy(weight = v, error = null) }
     fun setIntake(v: String) = _ui.update { it.copy(intake = v) }
     fun setBuyTitle(v: String) = _ui.update { it.copy(buyTitle = v, error = null) }
@@ -137,9 +144,30 @@ class TodayViewModel(
             _ui.update { it.copy(error = "请填写日期") }
             return
         }
+        val remindIso = state.scheduleRemindAt.trim().takeIf { it.isNotEmpty() }?.let { localDateTimeToIso(it) }
+        if (state.scheduleRemindAt.isNotBlank() && remindIso == null) {
+            _ui.update { it.copy(error = "提醒时间格式应为 YYYY-MM-DD HH:mm") }
+            return
+        }
         runAction {
-            scheduleRepository.create(NewSchedule(title = state.scheduleTitle.trim(), dueOn = dueOn))
-            _ui.update { it.copy(scheduleTitle = "", message = "已安排") }
+            val item = scheduleRepository.create(
+                NewSchedule(
+                    title = state.scheduleTitle.trim(),
+                    dueOn = dueOn,
+                    note = state.scheduleNote.trim(),
+                    remindAt = remindIso,
+                    allDay = true,
+                ),
+            )
+            reminders.upsert(item)
+            _ui.update {
+                it.copy(
+                    scheduleTitle = "",
+                    scheduleRemindAt = "",
+                    scheduleNote = "",
+                    message = "已安排",
+                )
+            }
         }
     }
 
@@ -183,6 +211,7 @@ class TodayViewModel(
         val next = if (task.status == "done") "open" else "done"
         runAction {
             scheduleRepository.setStatus(task.id, next)
+            if (next == "done") reminders.cancel(task.id)
             _ui.update { it.copy(message = if (next == "done") "已完成" else "已改回待办") }
         }
     }
@@ -218,6 +247,7 @@ class TodayViewModel(
             fitnessRepository: FitnessRepository,
             buyRepository: BuyRepository,
             habitsRepository: HabitsRepository,
+            reminders: ReminderScheduler,
             onUnauthorized: suspend () -> Unit,
         ) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -229,6 +259,7 @@ class TodayViewModel(
                     fitnessRepository,
                     buyRepository,
                     habitsRepository,
+                    reminders,
                     onUnauthorized,
                 ) as T
         }

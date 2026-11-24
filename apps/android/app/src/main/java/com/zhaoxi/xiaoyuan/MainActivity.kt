@@ -1,20 +1,30 @@
 package com.zhaoxi.xiaoyuan
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import com.zhaoxi.xiaoyuan.ui.nav.ZhaoXiNav
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.ZhaoXiTheme
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* 拒绝时仍可写入日程，只是到点不一定弹出 */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        askNotificationPermission()
         val app = application as ZhaoXiApp
         setContent {
             ZhaoXiTheme {
@@ -23,5 +33,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }

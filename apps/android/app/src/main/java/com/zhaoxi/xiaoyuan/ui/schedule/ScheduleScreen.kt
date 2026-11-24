@@ -18,23 +18,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zhaoxi.xiaoyuan.notify.scheduleMeta
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
+import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
-import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Line
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
+import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 
 @Composable
 fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
 
     Column(
         modifier = Modifier
@@ -43,15 +50,14 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回", color = Accent) }
-        Text("日程", color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text("把日子排开", style = MaterialTheme.typography.headlineLarge)
+        PageHeader(onBack = onBack, eyebrow = "日程", title = "今天要做的")
 
         if (state.loading && state.board == null) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            AppField("标题", state.title, viewModel::setTitle)
-            AppField("日期", state.dueOn, viewModel::setDueOn)
+            AppField("事项", state.title, viewModel::setTitle)
+            AppField("日期 YYYY-MM-DD", state.dueOn, viewModel::setDueOn)
+            AppField("提醒 YYYY-MM-DD HH:mm", state.remindAt, viewModel::setRemindAt)
             AppField("备注", state.note, viewModel::setNote)
             state.error?.let { Text(it, color = Accent) }
             Button(
@@ -60,12 +66,18 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(999.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
-            ) { Text("加入日程") }
+            ) { Text("安排") }
 
             state.board?.groups()?.forEach { (title, items) ->
                 Text("$title · ${items.size}", style = MaterialTheme.typography.headlineMedium)
                 if (items.isEmpty()) {
-                    EmptyBox(if (title == "今天") "今天还空着。" else "这一栏暂时空着。")
+                    EmptyBox(
+                        when (title) {
+                            "今天" -> "今天还空着。"
+                            "逾期" -> "没有拖着的事。"
+                            else -> "接下来一周是轻的。"
+                        },
+                    )
                 } else {
                     items.forEach { item ->
                         Row(
@@ -79,7 +91,10 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(item.title)
-                                Text("${item.dueOn.takeLast(5)}${if (item.note.isBlank()) "" else " · ${item.note}"}", color = Muted)
+                                Text(
+                                    scheduleMeta(item.dueOn, item.remindAt, item.note),
+                                    color = Muted,
+                                )
                             }
                             TextButton(onClick = { viewModel.askToggle(item) }) {
                                 Text(if (item.status == "done") "已完成" else "完成", color = Accent)

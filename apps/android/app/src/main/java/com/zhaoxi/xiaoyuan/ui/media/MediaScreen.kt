@@ -36,6 +36,7 @@ import com.zhaoxi.xiaoyuan.BuildConfig
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
+import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -54,9 +55,7 @@ fun MediaScreen(viewModel: MediaViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回", color = Accent) }
-        Text("收藏", color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text("书影音", style = MaterialTheme.typography.headlineLarge)
+        PageHeader(onBack = onBack, eyebrow = "收藏", title = "书影音")
 
         state.stats?.let { stats ->
             Text("${stats.year} 看完 ${stats.doneCount} · 平均 ${stats.averageRating ?: "—"} 星", color = Muted)

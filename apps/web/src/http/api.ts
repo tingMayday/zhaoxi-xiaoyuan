@@ -28,8 +28,16 @@ export { createMedia, fetchMediaStats, listMedia, removeMedia, uploadCover } fro
 export type { MediaItem, MediaKind, MediaStats, MediaStatus, NewMedia } from './apis/media';
 
 // 日程：区间列表、新建、改状态、删除
-export { createSchedule, fetchSchedule, removeSchedule, updateSchedule } from './apis/schedule';
-export type { ScheduleBoard, ScheduleItem } from './apis/schedule';
+export {
+  createSchedule,
+  fetchSchedule,
+  removeSchedule,
+  scheduleClock,
+  scheduleLocalToIso,
+  updateSchedule,
+} from './apis/schedule';
+export type { ScheduleBoard, ScheduleItem, ScheduleWrite } from './apis/schedule';
+
 
 // 时光档案：按日期折起的收支、身体、日程和待买
 export { fetchArchive } from './apis/archive';

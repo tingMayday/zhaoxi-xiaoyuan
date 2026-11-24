@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
+import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -50,10 +51,7 @@ fun ArchiveScreen(viewModel: ArchiveViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回", color = Accent) }
-        Text("数据", color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text("时光档案", style = MaterialTheme.typography.headlineLarge)
-        Text("所有日常，都有出处", color = Muted)
+        PageHeader(onBack = onBack, eyebrow = "数据", title = "时光档案", subtitle = "所有日常，都有出处")
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("" to "全部", "finance" to "财务", "health" to "健康", "schedule" to "日程", "buy" to "待买").forEach { (id, label) ->

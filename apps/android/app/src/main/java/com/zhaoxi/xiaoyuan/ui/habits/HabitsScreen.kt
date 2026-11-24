@@ -32,6 +32,7 @@ import com.zhaoxi.xiaoyuan.data.habits.Habit
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
+import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Line
@@ -56,9 +57,7 @@ fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("返回首页", color = Accent) }
-        Text("习惯", color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text("一点点积累", style = MaterialTheme.typography.headlineLarge)
+        PageHeader(onBack = onBack, eyebrow = "习惯", title = "一点点积累")
 
         if (state.loading && state.board == null) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
