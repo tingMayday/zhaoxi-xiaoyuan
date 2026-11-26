@@ -16,27 +16,34 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.notify.scheduleMeta
+import com.zhaoxi.xiaoyuan.ui.common.ActionButton
+import com.zhaoxi.xiaoyuan.ui.common.ActionTone
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
 import com.zhaoxi.xiaoyuan.ui.common.PageHeader
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
+import com.zhaoxi.xiaoyuan.ui.theme.Lilac
 import com.zhaoxi.xiaoyuan.ui.theme.Line
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
+import com.zhaoxi.xiaoyuan.ui.theme.Sage
 
 @Composable
-fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
+fun ScheduleScreen(
+    viewModel: ScheduleViewModel,
+    highlightId: String? = null,
+) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -50,14 +57,14 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "日程", title = "今天要做的")
+        PageHeader(eyebrow = "日程", title = "今天要做的")
 
         if (state.loading && state.board == null) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
             AppField("事项", state.title, viewModel::setTitle)
-            AppField("日期 YYYY-MM-DD", state.dueOn, viewModel::setDueOn)
-            AppField("提醒 YYYY-MM-DD HH:mm", state.remindAt, viewModel::setRemindAt)
+            AppField("日期", state.dueOn, viewModel::setDueOn, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Date)
+            AppField("提醒", state.remindAt, viewModel::setRemindAt, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.DateTime)
             AppField("备注", state.note, viewModel::setNote)
             state.error?.let { Text(it, color = Accent) }
             Button(
@@ -80,26 +87,44 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                     )
                 } else {
                     items.forEach { item ->
-                        Row(
+                        val highlighted = highlightId != null && highlightId == item.id
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Card, RoundedCornerShape(14.dp))
-                                .border(1.dp, Line, RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    when {
+                                        highlighted -> Lilac.copy(alpha = 0.55f)
+                                        item.status == "done" -> Sage.copy(alpha = 0.4f)
+                                        else -> Card
+                                    },
+                                )
+                                .border(1.dp, if (highlighted) Accent else Line, RoundedCornerShape(14.dp))
                                 .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(item.title)
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(item.title, style = MaterialTheme.typography.titleMedium)
                                 Text(
                                     scheduleMeta(item.dueOn, item.remindAt, item.note),
                                     color = Muted,
+                                    style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
-                            TextButton(onClick = { viewModel.askToggle(item) }) {
-                                Text(if (item.status == "done") "已完成" else "完成", color = Accent)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ActionButton(
+                                    label = if (item.status == "done") "已完成" else "完成",
+                                    onClick = { viewModel.askToggle(item) },
+                                    tone = if (item.status == "done") ActionTone.Soft else ActionTone.Primary,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                ActionButton(
+                                    label = "删除",
+                                    onClick = { viewModel.askDelete(item) },
+                                    tone = ActionTone.Danger,
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
-                            TextButton(onClick = { viewModel.askDelete(item) }) { Text("删除", color = Muted) }
                         }
                     }
                 }

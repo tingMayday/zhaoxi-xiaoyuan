@@ -34,10 +34,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.data.ledger.Category
 import com.zhaoxi.xiaoyuan.data.ledger.CategorySpend
+import androidx.compose.material3.AlertDialog
+import com.zhaoxi.xiaoyuan.data.ledger.FinanceSummary
+import com.zhaoxi.xiaoyuan.ui.common.ActionButton
+import com.zhaoxi.xiaoyuan.ui.common.ActionTone
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
+import com.zhaoxi.xiaoyuan.ui.common.FieldKind
+import com.zhaoxi.xiaoyuan.ui.common.MoneyValue
 import com.zhaoxi.xiaoyuan.ui.common.PageHeader
+import com.zhaoxi.xiaoyuan.ui.common.ToastMessage
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Ink
@@ -51,7 +58,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Sand
 import com.zhaoxi.xiaoyuan.ui.util.yuan
 
 @Composable
-fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
+fun LedgerScreen(viewModel: LedgerViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val expenseCats = state.categories.filter { it.kind == state.direction }
 
@@ -66,11 +73,19 @@ fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "记账", title = "花得明白")
+        PageHeader(eyebrow = "记账", title = "花得明白")
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             TextButton(onClick = { viewModel.shiftMonth(-1) }) { Text("上月", color = Accent) }
-            Text(state.month, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 8.dp))
+            Text(
+                state.month,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
             TextButton(onClick = { viewModel.shiftMonth(1) }) { Text("下月", color = Accent) }
         }
 
@@ -78,25 +93,19 @@ fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
             state.summary?.let { summary ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     MiniStat(modifier = Modifier.weight(1f), "收入", "¥${yuan(summary.incomeCents)}", Sand)
                     MiniStat(modifier = Modifier.weight(1f), "支出", "¥${yuan(summary.expenseCents)}", Sage)
                     MiniStat(modifier = Modifier.weight(1f), "结余", "¥${yuan(summary.balanceCents)}", Lilac)
                 }
-                val budgetHint = when {
-                    summary.totalBudgetCents == null -> "还没有月预算"
-                    summary.remainingCents != null -> "剩余 ¥${yuan(summary.remainingCents)} · 已用 ${((summary.usedRatio ?: 0.0) * 100).toInt()}%"
-                    else -> "月预算 ¥${yuan(summary.totalBudgetCents)}"
-                }
-                Text(budgetHint, color = Muted)
-                AppField("本月总预算", state.budget, viewModel::setBudget)
-                Button(
-                    onClick = viewModel::saveBudget,
-                    enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(999.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
-                ) { Text("保存预算") }
+
+                BudgetStrip(
+                    summary = summary,
+                    onEdit = viewModel::openBudgetDialog,
+                )
 
                 val spends = summary.categories.filter { it.amountCents > 0 }
                 if (spends.isNotEmpty()) {
@@ -110,8 +119,8 @@ fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
                 direction = state.direction,
                 onSelect = viewModel::setDirection,
             )
-            AppField("日期 YYYY-MM-DD", state.occurredOn, viewModel::setOccurredOn)
-            AppField("金额", state.amount, viewModel::setAmount)
+            AppField("日期", state.occurredOn, viewModel::setOccurredOn, kind = FieldKind.Date)
+            AppField("金额", state.amount, viewModel::setAmount, kind = FieldKind.Decimal)
             Text("分类", color = Muted, style = MaterialTheme.typography.labelLarge)
             if (expenseCats.isEmpty()) {
                 Text("暂无可用分类", color = Muted, style = MaterialTheme.typography.bodyMedium)
@@ -149,15 +158,54 @@ fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("${tx.category.name} · ${tx.occurredOn.takeLast(5)}")
                             if (tx.note.isNotBlank()) Text(tx.note, color = Muted, style = MaterialTheme.typography.bodyMedium)
+                            val sign = if (tx.direction == "expense") "-" else "+"
+                            MoneyValue(
+                                value = "$sign¥${yuan(tx.amountCents)}",
+                                label = tx.category.name,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
                         }
-                        val sign = if (tx.direction == "expense") "-" else "+"
-                        Text("$sign¥${yuan(tx.amountCents)}", style = MaterialTheme.typography.titleLarge)
-                        TextButton(onClick = { viewModel.askDelete(tx) }) { Text("删除", color = Accent) }
+                        ActionButton(
+                            label = "删除",
+                            onClick = { viewModel.askDelete(tx) },
+                            tone = ActionTone.Danger,
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
                 }
             }
         }
+    }
+
+    ToastMessage(message = state.message, onConsumed = viewModel::clearMessage)
+
+    if (state.budgetDialogOpen) {
+        AlertDialog(
+            onDismissRequest = viewModel::closeBudgetDialog,
+            title = { Text("设置月预算") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("${state.month} 的总预算（元）", color = Muted)
+                    AppField(
+                        label = "预算金额",
+                        value = state.budget,
+                        onChange = viewModel::setBudget,
+                        kind = FieldKind.Decimal,
+                    )
+                    state.error?.let { Text(it, color = Accent, style = MaterialTheme.typography.bodyMedium) }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::saveBudget,
+                    enabled = !state.busy,
+                ) { Text("保存", color = Accent) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::closeBudgetDialog) { Text("取消", color = Muted) }
+            },
+            containerColor = Card,
+        )
     }
 
     state.pendingDelete?.let { item ->
@@ -175,13 +223,102 @@ fun LedgerScreen(viewModel: LedgerViewModel, onBack: () -> Unit) {
 private fun MiniStat(modifier: Modifier, label: String, value: String, bg: androidx.compose.ui.graphics.Color) {
     Column(
         modifier = modifier
-            .background(bg, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(bg)
+            .border(1.dp, Line, RoundedCornerShape(16.dp))
+            .padding(horizontal = 10.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            label,
+            color = Muted,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        MoneyValue(
+            value = value,
+            label = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun BudgetStrip(summary: FinanceSummary, onEdit: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Card)
             .border(1.dp, Line, RoundedCornerShape(16.dp))
             .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(label, color = Muted, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(4.dp))
-        Text(value, style = MaterialTheme.typography.titleLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("月预算", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = if (summary.totalBudgetCents == null) "设置" else "修改",
+                color = OnAccent,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Accent)
+                    .clickable(onClick = onEdit)
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+            )
+        }
+        when {
+            summary.totalBudgetCents == null -> {
+                Text("还没有设置本月预算", color = Muted, style = MaterialTheme.typography.bodyMedium)
+            }
+            else -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BudgetCell(
+                        modifier = Modifier.weight(1f),
+                        label = "预算",
+                        value = "¥${yuan(summary.totalBudgetCents)}",
+                    )
+                    BudgetCell(
+                        modifier = Modifier.weight(1f),
+                        label = "剩余",
+                        value = summary.remainingCents?.let { "¥${yuan(it)}" } ?: "—",
+                    )
+                    BudgetCell(
+                        modifier = Modifier.weight(1f),
+                        label = "已用",
+                        value = summary.usedRatio?.let { "${(it * 100).toInt()}%" } ?: "—",
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetCell(modifier: Modifier, label: String, value: String) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Paper.copy(alpha = 0.45f))
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(label, color = Muted, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        MoneyValue(
+            value = value,
+            label = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -256,10 +393,22 @@ private fun SpendStructure(spends: List<CategorySpend>) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    Text(cat.name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Text("¥${yuan(cat.amountCents)}", color = Muted)
+                    Text(
+                        cat.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    MoneyValue(
+                        value = "¥${yuan(cat.amountCents)}",
+                        label = cat.name,
+                        color = Muted,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 Box(
                     modifier = Modifier

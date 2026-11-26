@@ -29,7 +29,9 @@ data class LedgerUiState(
     val categoryId: String = "",
     val occurredOn: String = todayDate(),
     val budget: String = "",
+    val budgetDialogOpen: Boolean = false,
     val error: String? = null,
+    val message: String? = null,
     val busy: Boolean = false,
     val pendingDelete: Transaction? = null,
 )
@@ -56,6 +58,9 @@ class LedgerViewModel(
     fun setCategoryId(value: String) = _ui.update { it.copy(categoryId = value) }
     fun setOccurredOn(value: String) = _ui.update { it.copy(occurredOn = value) }
     fun setBudget(value: String) = _ui.update { it.copy(budget = value, error = null) }
+    fun openBudgetDialog() = _ui.update { it.copy(budgetDialogOpen = true, error = null) }
+    fun closeBudgetDialog() = _ui.update { it.copy(budgetDialogOpen = false) }
+    fun clearMessage() = _ui.update { it.copy(message = null) }
     fun askDelete(item: Transaction) = _ui.update { it.copy(pendingDelete = item) }
     fun cancelDelete() = _ui.update { it.copy(pendingDelete = null) }
 
@@ -104,7 +109,13 @@ class LedgerViewModel(
                     ),
                 )
             }.onSuccess {
-                _ui.update { it.copy(busy = false) }
+                _ui.update {
+                    it.copy(
+                        busy = false,
+                        budgetDialogOpen = false,
+                        message = "预算已保存",
+                    )
+                }
                 refresh()
             }.onFailure { err ->
                 _ui.update { it.copy(busy = false, error = err.toUserMessage()) }

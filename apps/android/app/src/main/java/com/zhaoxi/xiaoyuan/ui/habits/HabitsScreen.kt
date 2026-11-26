@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.data.habits.Habit
+import com.zhaoxi.xiaoyuan.ui.common.ActionButton
+import com.zhaoxi.xiaoyuan.ui.common.ActionTone
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
@@ -42,7 +44,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Paper
 import com.zhaoxi.xiaoyuan.ui.theme.Sage
 
 @Composable
-fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
+fun HabitsScreen(viewModel: HabitsViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val today = state.board?.today.orEmpty()
 
@@ -57,7 +59,7 @@ fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "习惯", title = "一点点积累")
+        PageHeader(eyebrow = "习惯", title = "一点点积累")
 
         if (state.loading && state.board == null) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -79,7 +81,12 @@ fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
             }
             if (state.kind != "check") {
                 AppField("单位", state.unit, viewModel::setUnit)
-                AppField("每日目标", state.target, viewModel::setTarget)
+                AppField(
+                    "每日目标",
+                    state.target,
+                    viewModel::setTarget,
+                    kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+                )
             }
             state.error?.let { Text(it, color = Accent) }
             Button(
@@ -117,16 +124,22 @@ fun HabitsScreen(viewModel: HabitsViewModel, onBack: () -> Unit) {
                         HabitHeatmap(habit = habit, days = state.board?.days.orEmpty())
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             when (habit.kind) {
-                                "check" -> TextButton(onClick = { viewModel.askCheck(habit) }) {
-                                    Text(if (done) "已完成" else "打卡", color = Accent)
-                                }
+                                "check" -> ActionButton(
+                                    label = if (done) "已完成" else "打卡",
+                                    onClick = { viewModel.askCheck(habit) },
+                                    tone = if (done) ActionTone.Soft else ActionTone.Primary,
+                                )
                                 else -> {
-                                    TextButton(onClick = { viewModel.bump(habit, -1.0) }) { Text("−", color = Accent) }
-                                    Text(trimNum(value))
-                                    TextButton(onClick = { viewModel.bump(habit, 1.0) }) { Text("+", color = Accent) }
+                                    ActionButton(label = "−", onClick = { viewModel.bump(habit, -1.0) }, tone = ActionTone.Soft)
+                                    Text(trimNum(value), style = MaterialTheme.typography.titleMedium)
+                                    ActionButton(label = "+", onClick = { viewModel.bump(habit, 1.0) }, tone = ActionTone.Primary)
                                 }
                             }
-                            TextButton(onClick = { viewModel.askArchive(habit) }) { Text("归档", color = Muted) }
+                            ActionButton(
+                                label = "归档",
+                                onClick = { viewModel.askArchive(habit) },
+                                tone = ActionTone.Danger,
+                            )
                         }
                     }
                 }

@@ -31,7 +31,9 @@ object ReminderNotifier {
             context,
             scheduleId.hashCode(),
             Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(DeepLink.EXTRA_OPEN, DeepLink.OPEN_SCHEDULE)
+                putExtra(DeepLink.EXTRA_SCHEDULE_ID, scheduleId)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

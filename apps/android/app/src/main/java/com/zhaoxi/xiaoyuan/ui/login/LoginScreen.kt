@@ -1,13 +1,16 @@
 package com.zhaoxi.xiaoyuan.ui.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -22,10 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zhaoxi.xiaoyuan.R
+import com.zhaoxi.xiaoyuan.ui.common.SoftYardPattern
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.OnAccent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -42,14 +49,28 @@ fun LoginScreen(
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val isRegister = state.mode == LoginUiState.Mode.Register
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Paper)
-            .padding(horizontal = 28.dp, vertical = 48.dp),
-        verticalArrangement = Arrangement.Center,
+            .background(Paper),
     ) {
-        Text("朝夕小院", style = MaterialTheme.typography.labelLarge, color = Muted)
+        SoftYardPattern(modifier = Modifier.fillMaxSize().padding(12.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 48.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Card),
+        )
+        Spacer(Modifier.height(14.dp))
+        Text("朝夕小院", style = MaterialTheme.typography.labelLarge, color = Accent)
         Spacer(Modifier.height(8.dp))
         Text(
             text = if (isRegister) "为自己留一间院子" else "回来就好",
@@ -115,6 +136,7 @@ fun LoginScreen(
                     color = Accent,
                 )
             }
+        }
         }
     }
 }

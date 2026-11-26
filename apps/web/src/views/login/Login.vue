@@ -1,7 +1,10 @@
 <template>
   <section class="login">
     <form @submit.prevent="submit">
-      <p class="eyebrow">朝夕小院</p>
+      <div class="login-brand">
+        <img class="login-logo" :src="logoUrl" alt="" />
+        <p class="eyebrow">朝夕小院</p>
+      </div>
       <h1>{{ mode === 'login' ? '回来就好' : '为自己留一间院子' }}</h1>
       <p class="muted">记收支、习惯、身体、日程、待买和收藏。</p>
       <Field v-if="mode === 'register'" label="怎么称呼"><el-input v-model="name" maxlength="40" /></Field>
@@ -19,6 +22,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import logoUrl from '../../assets/logo.png';
 import Field from '../../components/Field.vue';
 import Notice from '../../components/Notice.vue';
 import { useAuthStore } from '../../stores/auth';

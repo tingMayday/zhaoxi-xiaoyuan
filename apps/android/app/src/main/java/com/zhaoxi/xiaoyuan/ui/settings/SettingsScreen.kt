@@ -28,7 +28,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Card
 import com.zhaoxi.xiaoyuan.ui.theme.Muted
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
 
     Column(
@@ -38,7 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "设置", title = "院主资料")
+        PageHeader(eyebrow = "设置", title = "院主资料")
 
         if (state.loading) {
             CircularProgressIndicator(color = Accent, modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -46,7 +46,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
             Text("邮箱 ${state.email}", color = Muted)
             AppField("怎么称呼", state.name, viewModel::setName)
             AppField("时区", state.timezone, viewModel::setTimezone)
-            AppField("身高 cm", state.height, viewModel::setHeight)
+            AppField(
+                "身高 cm",
+                state.height,
+                viewModel::setHeight,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+            )
             state.error?.let { Text(it, color = Accent) }
             state.message?.let { Text(it, color = Accent) }
             Button(

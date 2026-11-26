@@ -35,7 +35,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Muted
 import java.time.LocalDate
 
 @Composable
-fun ArchiveScreen(viewModel: ArchiveViewModel, onBack: () -> Unit) {
+fun ArchiveScreen(viewModel: ArchiveViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val shown = remember(state.board, state.kind) {
         state.board?.days.orEmpty().mapNotNull { day ->
@@ -51,7 +51,7 @@ fun ArchiveScreen(viewModel: ArchiveViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "数据", title = "时光档案", subtitle = "所有日常，都有出处")
+        PageHeader(eyebrow = "数据", title = "时光档案", subtitle = "所有日常，都有出处")
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("" to "全部", "finance" to "财务", "health" to "健康", "schedule" to "日程", "buy" to "待买").forEach { (id, label) ->

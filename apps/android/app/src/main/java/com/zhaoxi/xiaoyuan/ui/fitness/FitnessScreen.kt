@@ -56,7 +56,7 @@ private val weekdayLabels = listOf(
 )
 
 @Composable
-fun FitnessScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
+fun FitnessScreen(viewModel: FitnessViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val series = state.series
 
@@ -71,7 +71,7 @@ fun FitnessScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "健身", title = "稳稳向前")
+        PageHeader(eyebrow = "健身", title = "稳稳向前")
 
         if (state.loading && series == null) {
             CircularProgressIndicator(
@@ -84,9 +84,9 @@ fun FitnessScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
             GlanceRow(state)
 
             SectionCard(title = "今天记下", hint = series?.today?.let { "日期 $it" } ?: "") {
-                AppField("体重 kg", state.weight, viewModel::setWeight)
-                AppField("摄入 kcal", state.intake, viewModel::setIntake)
-                AppField("运动分钟", state.minutes, viewModel::setMinutes)
+                AppField("体重 kg", state.weight, viewModel::setWeight, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal)
+                AppField("摄入 kcal", state.intake, viewModel::setIntake, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Number)
+                AppField("运动分钟", state.minutes, viewModel::setMinutes, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Number)
                 state.error?.let { Text(it, color = Accent, style = MaterialTheme.typography.bodyMedium) }
                 PrimaryButton("保存今日", enabled = !state.busy, onClick = viewModel::save)
             }
@@ -98,11 +98,28 @@ fun FitnessScreen(viewModel: FitnessViewModel, onBack: () -> Unit) {
                 } ?: "先定下起点和终点",
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    AppField("起点 kg", state.startWeight, viewModel::setStartWeight, modifier = Modifier.weight(1f))
-                    AppField("目标 kg", state.targetWeight, viewModel::setTargetWeight, modifier = Modifier.weight(1f))
+                    AppField(
+                        "起点 kg",
+                        state.startWeight,
+                        viewModel::setStartWeight,
+                        modifier = Modifier.weight(1f),
+                        kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+                    )
+                    AppField(
+                        "目标 kg",
+                        state.targetWeight,
+                        viewModel::setTargetWeight,
+                        modifier = Modifier.weight(1f),
+                        kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+                    )
                 }
-                AppField("开始日期 YYYY-MM-DD", state.startDate, viewModel::setStartDate)
-                AppField("每日摄入目标 kcal", state.targetIntake, viewModel::setTargetIntake)
+                AppField("开始日期", state.startDate, viewModel::setStartDate, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Date)
+                AppField(
+                    "每日摄入目标 kcal",
+                    state.targetIntake,
+                    viewModel::setTargetIntake,
+                    kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Number,
+                )
                 PrimaryButton("保存目标", enabled = !state.busy, onClick = viewModel::saveProfile)
             }
 
@@ -258,7 +275,12 @@ private fun MiniGlance(modifier: Modifier, label: String, value: String, bg: and
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(label, color = Muted, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        com.zhaoxi.xiaoyuan.ui.common.MoneyValue(
+            value = value,
+            label = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

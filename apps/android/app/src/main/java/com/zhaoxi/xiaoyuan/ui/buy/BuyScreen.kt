@@ -2,7 +2,6 @@ package com.zhaoxi.xiaoyuan.ui.buy
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,10 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zhaoxi.xiaoyuan.data.buy.BuyBoard
 import com.zhaoxi.xiaoyuan.data.buy.BuyItem
+import com.zhaoxi.xiaoyuan.ui.common.ActionButton
+import com.zhaoxi.xiaoyuan.ui.common.ActionTone
 import com.zhaoxi.xiaoyuan.ui.common.AppField
 import com.zhaoxi.xiaoyuan.ui.common.ConfirmDialog
 import com.zhaoxi.xiaoyuan.ui.common.EmptyBox
 import com.zhaoxi.xiaoyuan.ui.common.PageHeader
+import com.zhaoxi.xiaoyuan.ui.common.SoftYardPattern
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Blush
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -50,7 +52,7 @@ import com.zhaoxi.xiaoyuan.ui.theme.Sand
 import com.zhaoxi.xiaoyuan.ui.util.yuan
 
 @Composable
-fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
+fun BuyScreen(viewModel: BuyViewModel) {
     val state by viewModel.ui.collectAsStateWithLifecycle()
     val open = viewModel.openItems()
     val bought = viewModel.boughtItems()
@@ -66,7 +68,7 @@ fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PageHeader(onBack = onBack, eyebrow = "待买", title = "想到就记下")
+        PageHeader(eyebrow = "待买", title = "想到就记下")
 
         if (state.loading && state.board == null) {
             CircularProgressIndicator(
@@ -92,12 +94,14 @@ fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
                         state.quantity,
                         viewModel::setQuantity,
                         modifier = Modifier.weight(0.35f),
+                        kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
                     )
                     AppField(
                         "预估金额",
                         state.amount,
                         viewModel::setAmount,
                         modifier = Modifier.weight(0.65f),
+                        kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
                     )
                 }
                 AppField("备注", state.note, viewModel::setNote)
@@ -171,14 +175,21 @@ fun BuyScreen(viewModel: BuyViewModel, onBack: () -> Unit) {
 
 @Composable
 private fun HeroCard(board: BuyBoard) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .background(Paper.copy(alpha = 0.5f))
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .background(Paper.copy(alpha = 0.5f)),
     ) {
+        SoftYardPattern(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(6.dp),
+        )
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
         Text("清单概览", color = Accent, style = MaterialTheme.typography.labelLarge)
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -207,6 +218,7 @@ private fun HeroCard(board: BuyBoard) {
                 )
                 Text("本月已买", color = Muted, style = MaterialTheme.typography.labelLarge)
             }
+        }
         }
     }
 }
@@ -265,11 +277,11 @@ private fun MiniGlance(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        com.zhaoxi.xiaoyuan.ui.common.MoneyValue(
+            value = value,
+            label = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -364,57 +376,30 @@ private fun BuyRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onBuy != null) {
-                PillButton(
+                ActionButton(
                     label = "买到了",
-                    filled = true,
                     onClick = onBuy,
+                    tone = ActionTone.Primary,
                     modifier = Modifier.weight(1f),
                 )
             } else {
-                Text(
-                    "已买到",
-                    color = Muted,
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Card)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ActionButton(
+                    label = "已买到",
+                    onClick = {},
+                    tone = ActionTone.Soft,
+                    enabled = false,
+                    modifier = Modifier.weight(1f),
                 )
             }
             if (onRemove != null) {
-                PillButton(
+                ActionButton(
                     label = "删除",
-                    filled = false,
                     onClick = onRemove,
+                    tone = ActionTone.Danger,
                     modifier = Modifier.weight(1f),
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PillButton(
-    label: String,
-    filled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(if (filled) Accent else Card)
-            .border(1.dp, if (filled) Accent else Line, RoundedCornerShape(999.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            color = if (filled) OnAccent else Muted,
-            style = MaterialTheme.typography.labelLarge,
-        )
     }
 }
 

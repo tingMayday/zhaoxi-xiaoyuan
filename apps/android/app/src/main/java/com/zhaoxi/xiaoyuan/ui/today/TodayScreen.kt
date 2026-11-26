@@ -1,5 +1,6 @@
 package com.zhaoxi.xiaoyuan.ui.today
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,14 +31,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zhaoxi.xiaoyuan.R
 import com.zhaoxi.xiaoyuan.data.today.TodayOverview
+import com.zhaoxi.xiaoyuan.ui.common.ActionButton
+import com.zhaoxi.xiaoyuan.ui.common.ActionTone
 import com.zhaoxi.xiaoyuan.ui.common.AppField
+import com.zhaoxi.xiaoyuan.ui.common.SoftYardPattern
 import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Blush
 import com.zhaoxi.xiaoyuan.ui.theme.Card
@@ -158,40 +164,62 @@ fun TodayScreen(
 
 @Composable
 private fun HeroHeader(data: TodayOverview) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Paper.copy(alpha = 0.45f), RoundedCornerShape(24.dp))
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .clip(RoundedCornerShape(24.dp))
+            .background(Paper.copy(alpha = 0.5f)),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        SoftYardPattern(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(8.dp),
+        )
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("朝夕小院", color = Accent, style = MaterialTheme.typography.labelLarge)
-            Text(data.date, color = Muted, style = MaterialTheme.typography.bodyMedium)
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("今天，慢慢来", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    data.quote,
-                    color = Muted,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Card),
+                    )
+                    Column {
+                        Text("朝夕小院", color = Accent, style = MaterialTheme.typography.titleMedium)
+                        Text(data.date, color = Muted, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Card.copy(alpha = 0.85f))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text("${data.score}", style = MaterialTheme.typography.headlineLarge, color = Accent)
+                    Text("今日分", color = Muted, style = MaterialTheme.typography.labelLarge)
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${data.score}", style = MaterialTheme.typography.displayLarge, color = Accent)
-                Text("今日分", color = Muted, style = MaterialTheme.typography.labelLarge)
-            }
+            Text("今天，慢慢来", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                data.quote,
+                color = Muted,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -252,14 +280,14 @@ private fun GlanceCell(
             .background(bg, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(label, color = Muted, style = MaterialTheme.typography.labelLarge)
-        Text(
-            value,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Text(label, color = Muted, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        com.zhaoxi.xiaoyuan.ui.common.MoneyValue(
+            value = value,
+            label = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -490,7 +518,11 @@ private fun FocusRow(
                 )
             }
             action != null && onAction != null -> {
-                PillButton(label = action, onClick = onAction)
+                ActionButton(
+                    label = action,
+                    onClick = onAction,
+                    tone = ActionTone.Primary,
+                )
             }
         }
     }
@@ -580,7 +612,7 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
 
     when (state.panel) {
         "ledger" -> QuickForm {
-            AppField("金额", state.amount, viewModel::setAmount)
+            AppField("金额", state.amount, viewModel::setAmount, kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal)
             if (state.categories.isNotEmpty()) {
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -606,19 +638,44 @@ private fun QuickPanels(viewModel: TodayViewModel, state: TodayUiState) {
         }
         "schedule" -> QuickForm {
             AppField("事项", state.scheduleTitle, viewModel::setScheduleTitle)
-            AppField("日期 YYYY-MM-DD", state.scheduleDueOn, viewModel::setScheduleDueOn)
-            AppField("提醒 YYYY-MM-DD HH:mm", state.scheduleRemindAt, viewModel::setScheduleRemindAt)
+            AppField(
+                "日期",
+                state.scheduleDueOn,
+                viewModel::setScheduleDueOn,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Date,
+            )
+            AppField(
+                "提醒",
+                state.scheduleRemindAt,
+                viewModel::setScheduleRemindAt,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.DateTime,
+            )
             AppField("备注", state.scheduleNote, viewModel::setScheduleNote)
             PrimaryAction("安排", enabled = !state.busy, onClick = viewModel::saveSchedule)
         }
         "body" -> QuickForm {
-            AppField("体重 kg", state.weight, viewModel::setWeight)
-            AppField("摄入 kcal", state.intake, viewModel::setIntake)
+            AppField(
+                "体重 kg",
+                state.weight,
+                viewModel::setWeight,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+            )
+            AppField(
+                "摄入 kcal",
+                state.intake,
+                viewModel::setIntake,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Number,
+            )
             PrimaryAction("记下", enabled = !state.busy, onClick = viewModel::saveBody)
         }
         "buy" -> QuickForm {
             AppField("想买", state.buyTitle, viewModel::setBuyTitle)
-            AppField("估价", state.buyAmount, viewModel::setBuyAmount)
+            AppField(
+                "估价",
+                state.buyAmount,
+                viewModel::setBuyAmount,
+                kind = com.zhaoxi.xiaoyuan.ui.common.FieldKind.Decimal,
+            )
             PrimaryAction("放入清单", enabled = !state.busy, onClick = viewModel::saveBuy)
         }
     }
@@ -654,20 +711,6 @@ private fun PrimaryAction(label: String, enabled: Boolean, onClick: () -> Unit) 
             disabledContentColor = OnAccent.copy(alpha = 0.8f),
         ),
     ) { Text(label, style = MaterialTheme.typography.titleMedium) }
-}
-
-@Composable
-private fun PillButton(label: String, onClick: () -> Unit) {
-    Text(
-        text = label,
-        color = OnAccent,
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(Accent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    )
 }
 
 @Composable

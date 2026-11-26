@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.zhaoxi.xiaoyuan.data.AppContainer
+import com.zhaoxi.xiaoyuan.notify.DeepLink
 import com.zhaoxi.xiaoyuan.ui.login.LoginScreen
 import com.zhaoxi.xiaoyuan.ui.login.LoginViewModel
 import com.zhaoxi.xiaoyuan.ui.session.SessionViewModel
@@ -21,7 +22,12 @@ import com.zhaoxi.xiaoyuan.ui.theme.Accent
 import com.zhaoxi.xiaoyuan.ui.theme.Card
 
 @Composable
-fun ZhaoXiNav(container: AppContainer) {
+fun ZhaoXiNav(
+    container: AppContainer,
+    deepLinkOpen: String? = null,
+    deepLinkScheduleId: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
+) {
     val sessionVm: SessionViewModel = viewModel(factory = SessionViewModel.factory(container.authRepository))
     val session by sessionVm.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
@@ -55,6 +61,9 @@ fun ZhaoXiNav(container: AppContainer) {
         composable(Routes.Home) {
             HomeScaffold(
                 container = container,
+                deepLinkOpen = deepLinkOpen,
+                deepLinkScheduleId = deepLinkScheduleId,
+                onDeepLinkConsumed = onDeepLinkConsumed,
                 onUnauthorized = {
                     navController.navigate(Routes.Login) {
                         popUpTo(Routes.Home) { inclusive = true }
@@ -62,5 +71,10 @@ fun ZhaoXiNav(container: AppContainer) {
                 },
             )
         }
+    }
+
+    // 未登录时点通知：先进首页链路由登录后再进；此处仅消费无效深链
+    if (!session.loggedIn && deepLinkOpen != null) {
+        // 保留 deepLink，登录后 HomeScaffold 再处理；无需清空
     }
 }
