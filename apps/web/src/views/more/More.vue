@@ -8,9 +8,20 @@
       <router-link to="/时光档案">时光档案</router-link>
       <router-link to="/设置">设置</router-link>
     </nav>
+    <button type="button" class="exit more-exit" @click="exit">离开小院</button>
   </section>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
 import PageHeading from '../../components/PageHeading.vue';
+import { useAuthStore } from '../../stores/auth';
+
+const auth = useAuthStore();
+const router = useRouter();
+
+function exit() {
+  auth.logout();
+  router.push('/login');
+}
 </script>

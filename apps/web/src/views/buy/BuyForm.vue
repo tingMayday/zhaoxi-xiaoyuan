@@ -1,5 +1,5 @@
 <template>
-  <form class="row" @submit.prevent="submit">
+  <form class="row tone-buy" @submit.prevent="submit">
     <Field label="物品"><el-input v-model="form.title" /></Field>
     <Field label="数量"><el-input v-model="form.quantity" inputmode="decimal" /></Field>
     <Field label="估价"><el-input v-model="form.amount" inputmode="decimal" /></Field>

@@ -39,6 +39,14 @@ export function listCategories() {
   return request<Category[]>('/api/categories');
 }
 
+export function createCategory(body: { name: string; kind: 'income' | 'expense' }) {
+  return request<Category>('/api/categories', { method: 'POST', json: body });
+}
+
+export function archiveCategory(id: string) {
+  return request(`/api/categories/${id}`, { method: 'PATCH' });
+}
+
 export function fetchSummary(month: string) {
   return request<FinanceSummary>(`/api/finance/summary?month=${month}`);
 }

@@ -1,27 +1,32 @@
 <template>
   <section>
     <PageHeading eyebrow="习惯" title="完成一点，就算前进" :note="data ? `今日 ${doneCount} / ${data.habits.length} · 近 30 天` : ''" />
-    <HabitForm :save="create" />
-    <Notice :text="error" kind="error" />
-    <HabitCard
-      v-for="habit in data?.habits || []"
-      :key="habit.id"
-      :habit="habit"
-      :today="data?.today || ''"
-      :days="data?.days || []"
-      @set="setValue(habit.id, $event)"
-      @archive="archive(habit.id)"
-    />
-    <Notice v-if="data && data.habits.length === 0" text="还没有习惯。先加一件今天就能做的小事。" kind="empty" />
+    <PageStatus :loading="loading" :error="loadError" :retry="retry" />
+    <template v-if="!loading && !loadError">
+      <HabitForm :save="create" />
+      <Notice :text="error" kind="error" />
+      <HabitCard
+        v-for="habit in data?.habits || []"
+        :key="habit.id"
+        :habit="habit"
+        :today="data?.today || ''"
+        :days="data?.days || []"
+        @set="setValue(habit.id, $event)"
+        @archive="archive(habit.id)"
+      />
+      <Notice v-if="data && data.habits.length === 0" text="还没有习惯。先加一件今天就能做的小事。" kind="empty" art="remind" />
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import Notice from '../../components/Notice.vue';
+import PageHeading from '../../components/PageHeading.vue';
+import PageStatus from '../../components/PageStatus.vue';
+import { usePageLoad } from '../../composables/usePageLoad';
 import { archiveHabit, createHabit, listHabits, saveHabitLog, type Habit, type HabitBoard } from '../../http/api';
 import { confirmAction } from '../../utils';
-import PageHeading from '../../components/PageHeading.vue';
 import HabitCard from './HabitCard.vue';
 import HabitForm from './HabitForm.vue';
 
@@ -32,10 +37,9 @@ const doneCount = computed(() => data.value?.habits.filter((habit) => {
   return value >= habit.dailyTarget;
 }).length || 0);
 
-onMounted(load);
-async function load() {
+const { loading, loadError, load, retry } = usePageLoad(async () => {
   data.value = await listHabits();
-}
+});
 
 async function setValue(id: string, value: number) {
   if (!data.value || !Number.isFinite(value)) return;

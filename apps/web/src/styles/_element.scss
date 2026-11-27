@@ -31,21 +31,119 @@
   box-shadow: 0 0 0 1px var(--accent) inset;
 }
 
-.el-button.is-round { padding: 8px 16px; }
+.el-button {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.el-button.is-round {
+  min-height: 40px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
 
 .el-button--primary {
   --el-button-text-color: #ffffff;
   --el-button-hover-text-color: #ffffff;
   --el-button-active-text-color: #ffffff;
   --el-button-disabled-text-color: rgba(255, 255, 255, 0.72);
+  --el-button-bg-color: var(--accent);
+  --el-button-border-color: var(--accent);
+  --el-button-hover-bg-color: #7a536f;
+  --el-button-hover-border-color: #7a536f;
+  --el-button-active-bg-color: #56374d;
+  --el-button-active-border-color: #56374d;
   color: #ffffff;
+  box-shadow: 0 8px 18px rgba(107, 69, 96, 0.22);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  box-shadow: 0 10px 22px rgba(107, 69, 96, 0.28);
+}
+
+.el-button--primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(107, 69, 96, 0.18);
 }
 
 .el-button--default {
-  --el-button-bg-color: #fff;
+  --el-button-bg-color: #fffdf8;
   --el-button-text-color: var(--ink);
   --el-button-border-color: var(--line);
   --el-button-hover-bg-color: #fff;
   --el-button-hover-border-color: var(--accent);
   --el-button-hover-text-color: var(--accent);
+}
+
+.el-button.is-text {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--accent);
+  background: transparent;
+
+  &:hover,
+  &:focus {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+}
+
+.el-button.btn-soft,
+.btn-soft.el-button {
+  --el-button-bg-color: #fffdf8;
+  --el-button-text-color: var(--accent);
+  --el-button-border-color: var(--line);
+  --el-button-hover-bg-color: #fff;
+  --el-button-hover-border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  --el-button-hover-text-color: var(--accent);
+  min-height: 36px;
+  padding: 7px 14px;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.el-button.btn-danger,
+.btn-danger.el-button {
+  --el-button-bg-color: #8a4550;
+  --el-button-border-color: #8a4550;
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: #9a5560;
+  --el-button-hover-border-color: #9a5560;
+  --el-button-hover-text-color: #fff;
+  color: #fff;
+  background: #8a4550;
+  border-color: #8a4550;
+  box-shadow: 0 6px 14px rgba(138, 69, 80, 0.2);
+}
+
+.el-dialog {
+  --el-dialog-border-radius: 20px;
+  --el-dialog-bg-color: #fffdf8;
+}
+
+.el-dialog__header {
+  padding-bottom: 8px;
+}
+
+.el-dialog__title {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.category-form {
+  margin-top: 0;
+}
+
+.category-panel .category-list {
+  max-height: min(46vh, 360px);
+  overflow: auto;
 }

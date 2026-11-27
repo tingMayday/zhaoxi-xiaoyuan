@@ -1,23 +1,28 @@
 <template>
   <section>
     <PageHeading eyebrow="健身" title="稳稳向前" />
-    <StatGrid :items="stats" />
-    <Notice v-if="series?.profile" :text="`起点 ${series.profile.startWeightKg} kg，目标 ${series.profile.targetWeightKg} kg。运动 ${series.todayLog?.exerciseMin ?? 0} 分钟。`" kind="muted" />
-    <WeightChart v-if="series?.points.length" :points="series.points" />
-    <Notice v-else text="还没有体重。记下今天的数字，七日均线会从这里长出来。" kind="empty" />
-    <LogForm :save="saveLog" />
-    <GoalForm :saved="savedGoal" :today="series?.today || ''" :save="saveProfile" />
-    <Notice :text="error" kind="error" />
-    <WeekPlan :week="week" @save="saveWeek" />
+    <PageStatus :loading="loading" :error="loadError" :retry="retry" />
+    <template v-if="!loading && !loadError">
+      <StatGrid :items="stats" />
+      <Notice v-if="series?.profile" :text="`起点 ${series.profile.startWeightKg} kg，目标 ${series.profile.targetWeightKg} kg。运动 ${series.todayLog?.exerciseMin ?? 0} 分钟。`" kind="muted" />
+      <WeightChart v-if="series?.points.length" :points="series.points" />
+      <Notice v-else text="还没有体重。记下今天的数字，七日均线会从这里长出来。" kind="empty" />
+      <LogForm :save="saveLog" />
+      <GoalForm :saved="savedGoal" :today="series?.today || ''" :save="saveProfile" />
+      <Notice :text="error" kind="error" />
+      <WeekPlan :week="week" @save="saveWeek" />
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import Notice from '../../components/Notice.vue';
-import { fetchSeries, fetchWeekPlan, saveBodyLog, saveFitnessProfile, saveWeekPlan, type FitnessSeries } from '../../http/api';
 import PageHeading from '../../components/PageHeading.vue';
+import PageStatus from '../../components/PageStatus.vue';
 import StatGrid from '../../components/StatGrid.vue';
+import { usePageLoad } from '../../composables/usePageLoad';
+import { fetchSeries, fetchWeekPlan, saveBodyLog, saveFitnessProfile, saveWeekPlan, type FitnessSeries } from '../../http/api';
 import GoalForm from './GoalForm.vue';
 import LogForm from './LogForm.vue';
 import WeekPlan from './WeekPlan.vue';
@@ -43,9 +48,7 @@ const stats = computed(() => [
   { label: '今日热量缺口', value: series.value?.deficit == null ? '—' : `${series.value.deficit} kcal` },
 ]);
 
-onMounted(load);
-
-async function load() {
+const { loading, loadError, load, retry } = usePageLoad(async () => {
   const [nextSeries, plan] = await Promise.all([fetchSeries(), fetchWeekPlan()]);
   series.value = nextSeries;
   week.forEach((item) => { item.title = ''; item.detail = ''; });
@@ -55,7 +58,7 @@ async function load() {
     slot.title = item.title;
     slot.detail = item.detail;
   });
-}
+});
 
 function optionalNumber(value: string) {
   if (!value.trim()) return undefined;

@@ -25,8 +25,21 @@ export function createBuyItem(body: { title: string; quantity?: number; estimate
   return request('/api/buy-items', { method: 'POST', json: body });
 }
 
+export type BuyPatch = {
+  title?: string;
+  quantity?: number;
+  estimateCents?: number;
+  status?: 'open' | 'bought';
+  boughtOn?: string;
+  note?: string;
+};
+
 export function markBought(id: string) {
   return request(`/api/buy-items/${id}`, { method: 'PATCH', json: { status: 'bought' } });
+}
+
+export function updateBuyItem(id: string, body: BuyPatch) {
+  return request(`/api/buy-items/${id}`, { method: 'PATCH', json: body });
 }
 
 export function removeBuyItem(id: string) {

@@ -1,26 +1,26 @@
 <template>
   <div class="today-charts">
-    <section class="panel">
+    <section class="panel tone-score">
       <div class="panel-head"><h2>今日构成</h2></div>
       <Chart :option="scoreOption" />
     </section>
 
-    <section class="panel">
+    <section class="panel tone-spend">
       <div class="panel-head">
         <h2>本月支出</h2>
         <router-link to="/记账">去记账</router-link>
       </div>
-      <Chart v-if="slices.length" :option="spendOption" />
-      <p v-else class="empty">这个月还没有支出。</p>
+      <Chart v-if="slices.length" class="spend-chart" :option="spendOption" height="280px" />
+      <Notice v-else text="这个月还没有支出。" kind="empty" />
     </section>
 
-    <section class="panel span">
+    <section class="panel span tone-weight">
       <div class="panel-head">
         <h2>体重走势</h2>
         <router-link to="/健身">去记录</router-link>
       </div>
       <Chart v-if="weights.length" :option="weightOption" height="280px" />
-      <p v-else class="empty">还没有体重。记下一次，曲线就会出现。</p>
+      <Notice v-else text="还没有体重。记下一次，曲线就会出现。" kind="empty" />
     </section>
   </div>
 </template>
@@ -29,6 +29,7 @@
 import { computed } from 'vue';
 import type { EChartsCoreOption } from 'echarts/core';
 import Chart from '../../components/Chart.vue';
+import Notice from '../../components/Notice.vue';
 import type { FinanceSummary } from '../../http/api';
 
 const props = defineProps<{
@@ -100,29 +101,98 @@ const scoreOption = computed<EChartsCoreOption>(() => ({
   }],
 }));
 
+const spendTotal = computed(() => slices.value.reduce((sum, item) => sum + item.value, 0));
+
 const spendOption = computed<EChartsCoreOption>(() => ({
-  color: [plum, '#8a5a42', '#5f8a55', '#c4924a', '#9a6a9e', '#c46b52', '#7d8c6a', '#b08968'],
+  // 高对比度色相，避免相邻扇区发糊
+  color: ['#d4533a', '#5b3d8f', '#1f8a6a', '#d4921a', '#2f6fad', '#a34d2e', '#c44f8a', '#5a7a2e'],
   textStyle: { fontFamily: font },
+  title: {
+    text: `¥${spendTotal.value.toFixed(0)}`,
+    subtext: '本月合计',
+    left: '50%',
+    top: '39%',
+    textAlign: 'center',
+    textStyle: {
+      color: ink,
+      fontFamily: 'Palatino Linotype, Palatino, Songti SC, SimSun, serif',
+      fontSize: 26,
+      fontWeight: 600,
+      lineHeight: 32,
+    },
+    subtextStyle: { color: muted, fontSize: 13, lineHeight: 22 },
+  },
   tooltip: {
     trigger: 'item',
+    backgroundColor: 'rgba(255, 253, 248, 0.96)',
+    borderColor: line,
+    textStyle: { color: ink, fontSize: 13 },
     formatter: (params: unknown) => {
-      const item = params as { name?: string; value?: number; percent?: number };
+      const item = params as { name?: string; value?: number; percent?: number; marker?: string };
       const amount = Number(item.value || 0).toFixed(2);
-      return `${item.name}<br/>¥${amount} · ${item.percent ?? 0}%`;
+      return `${item.marker || ''}${item.name}<br/><b>¥${amount}</b> · ${item.percent ?? 0}%`;
     },
   },
-  legend: {
-    bottom: 0,
-    icon: 'circle',
-    itemWidth: 8,
-    itemHeight: 8,
-    textStyle: { color: muted, fontSize: 12 },
-  },
+  legend: { show: false },
   series: [{
     type: 'pie',
-    radius: ['48%', '70%'],
-    center: ['50%', '42%'],
-    label: { show: false },
+    radius: ['44%', '66%'],
+    center: ['50%', '50%'],
+    roseType: 'radius',
+    minShowLabelAngle: 4,
+    padAngle: 2,
+    itemStyle: {
+      borderColor: '#fffdf8',
+      borderWidth: 3,
+      shadowBlur: 10,
+      shadowColor: 'rgba(62, 42, 24, 0.1)',
+    },
+    label: {
+      show: true,
+      formatter: (params: unknown) => {
+        const item = params as { name?: string; value?: number; percent?: number };
+        return `{name|${item.name}}\n{amt|¥${Number(item.value || 0).toFixed(0)}}  {pct|${Math.round(item.percent || 0)}%}`;
+      },
+      rich: {
+        name: {
+          color: ink,
+          fontSize: 16,
+          fontWeight: 700,
+          lineHeight: 24,
+        },
+        amt: {
+          color: '#a34d2e',
+          fontSize: 15,
+          fontWeight: 600,
+          lineHeight: 22,
+        },
+        pct: {
+          color: muted,
+          fontSize: 14,
+          lineHeight: 22,
+        },
+      },
+    },
+    labelLine: {
+      show: true,
+      length: 28,
+      length2: 22,
+      minTurnAngle: 90,
+      smooth: 0.1,
+      lineStyle: {
+        color: '#9a8870',
+        width: 1.4,
+      },
+    },
+    emphasis: {
+      scale: true,
+      scaleSize: 6,
+      itemStyle: {
+        shadowBlur: 16,
+        shadowColor: 'rgba(62, 42, 24, 0.18)',
+      },
+      label: { show: true },
+    },
     data: slices.value,
   }],
 }));

@@ -1,5 +1,5 @@
 <template>
-  <form class="row compact" @submit.prevent="submit">
+  <form class="row compact tone-habit" @submit.prevent="submit">
     <Field label="新习惯"><el-input v-model="form.name" /></Field>
     <Field label="方式">
       <el-select v-model="form.kind">

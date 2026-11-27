@@ -1,11 +1,14 @@
 <template>
   <section>
     <PageHeading eyebrow="数据" title="时光档案" note="所有日常，都有出处" />
-    <div class="page-head">
-      <h2>按日期折叠的生活记录</h2>
-      <ChipBar :options="filters" :model-value="kind" @update:model-value="kind = $event as typeof kind" />
-    </div>
-    <Notice :text="error" kind="error" />
+    <section class="surface tone-archive">
+      <div class="page-head">
+        <h2>按日期折叠的生活记录</h2>
+        <ChipBar :options="filters" :model-value="kind" @update:model-value="kind = $event as typeof kind" />
+      </div>
+    </section>
+    <PageStatus :loading="loading" :error="loadError" :retry="retry" />
+    <template v-if="!loading && !loadError">
     <article v-for="day in shown" :key="day.date" class="archive-day">
       <button type="button" @click="toggle(day.date)">
         <strong>{{ dayTitle(day.date) }}</strong>
@@ -23,14 +26,17 @@
       </ul>
     </article>
     <Notice v-if="board && shown.length === 0" text="这段时间还没有留下记录。" kind="empty" />
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import ChipBar from '../../components/ChipBar.vue';
 import Notice from '../../components/Notice.vue';
 import PageHeading from '../../components/PageHeading.vue';
+import PageStatus from '../../components/PageStatus.vue';
+import { usePageLoad } from '../../composables/usePageLoad';
 import { fetchArchive, type ArchiveBoard, type ArchiveKind } from '../../http/api';
 
 const filters = [
@@ -50,7 +56,6 @@ const kindLabel: Record<ArchiveKind, string> = {
 const board = ref<ArchiveBoard | null>(null);
 const kind = ref<'' | ArchiveKind>('');
 const open = ref(new Set<string>());
-const error = ref('');
 
 const shown = computed(() => {
   if (!board.value) return [];
@@ -62,13 +67,9 @@ const shown = computed(() => {
     .filter((day) => day.items.length > 0);
 });
 
-onMounted(async () => {
-  try {
-    board.value = await fetchArchive();
-    open.value = new Set(board.value.days.slice(0, 3).map((day) => day.date));
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '档案没有打开';
-  }
+const { loading, loadError, retry } = usePageLoad(async () => {
+  board.value = await fetchArchive();
+  open.value = new Set(board.value.days.slice(0, 3).map((day) => day.date));
 });
 
 function toggle(date: string) {

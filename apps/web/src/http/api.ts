@@ -7,9 +7,9 @@ export { getToken, request, setToken } from '.';
 export { fetchProfile, login, register, updateProfile } from './apis/auth';
 export type { AuthSession, Profile } from './apis/auth';
 
-// 待买：清单、加入、标为买到、删除
-export { fetchBuyItems, createBuyItem, markBought, removeBuyItem } from './apis/buy';
-export type { BuyBoard, BuyItem } from './apis/buy';
+// 待买：清单、加入、标为买到、修改、删除
+export { fetchBuyItems, createBuyItem, markBought, updateBuyItem, removeBuyItem } from './apis/buy';
+export type { BuyBoard, BuyItem, BuyPatch } from './apis/buy';
 
 // 健身：体重曲线、身体记录、减脂目标和一周安排
 export { fetchSeries, fetchWeekPlan, saveBodyLog, saveFitnessProfile, saveWeekPlan } from './apis/fitness';
@@ -20,23 +20,35 @@ export { archiveHabit, createHabit, listHabits, saveHabitLog } from './apis/habi
 export type { Habit, HabitBoard } from './apis/habits';
 
 // 记账：分类、月度汇总与对比、流水和预算
-export { createTransaction, fetchCompare, fetchSummary, listCategories, listTransactions, removeTransaction, saveBudget } from './apis/ledger';
+export {
+  archiveCategory,
+  createCategory,
+  createTransaction,
+  fetchCompare,
+  fetchSummary,
+  listCategories,
+  listTransactions,
+  removeTransaction,
+  saveBudget,
+} from './apis/ledger';
 export type { Category, FinanceSummary, MonthCompare, NewTransaction, Transaction } from './apis/ledger';
 
-// 收藏：书影音列表、年度统计、新建、删除和封面上传
-export { createMedia, fetchMediaStats, listMedia, removeMedia, uploadCover } from './apis/media';
-export type { MediaItem, MediaKind, MediaStats, MediaStatus, NewMedia } from './apis/media';
+// 收藏：书影音列表、年度统计、新建、修改、删除和封面上传
+export { createMedia, fetchMediaStats, listMedia, updateMedia, removeMedia, uploadCover } from './apis/media';
+export type { MediaItem, MediaKind, MediaPatch, MediaStats, MediaStatus, NewMedia } from './apis/media';
 
-// 日程：区间列表、新建、改状态、删除
+// 日程：区间列表、新建、修改、删除
 export {
   createSchedule,
   fetchSchedule,
   removeSchedule,
   scheduleClock,
+  scheduleDateTimeLocal,
+  scheduleIsoToLocal,
   scheduleLocalToIso,
   updateSchedule,
 } from './apis/schedule';
-export type { ScheduleBoard, ScheduleItem, ScheduleWrite } from './apis/schedule';
+export type { ScheduleBoard, ScheduleItem, SchedulePatch, ScheduleWrite } from './apis/schedule';
 
 
 // 时光档案：按日期折起的收支、身体、日程和待买

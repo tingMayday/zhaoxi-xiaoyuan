@@ -1,12 +1,14 @@
 <template>
-  <h2>今天</h2>
-  <form class="row" @submit.prevent="submit">
-    <Field label="体重 kg"><el-input v-model="log.weight" inputmode="decimal" /></Field>
-    <Field label="体脂 %"><el-input v-model="log.fat" inputmode="decimal" /></Field>
-    <Field label="摄入 kcal"><el-input v-model="log.intake" inputmode="numeric" /></Field>
-    <Field label="运动分钟"><el-input v-model="log.minutes" inputmode="numeric" /></Field>
-    <el-button class="primary" type="primary" native-type="submit" round>记下</el-button>
-  </form>
+  <section class="surface tone-weight">
+    <div class="panel-head"><h2>今天</h2></div>
+    <form class="row" @submit.prevent="submit">
+      <Field label="体重 kg"><el-input v-model="log.weight" inputmode="decimal" /></Field>
+      <Field label="体脂 %"><el-input v-model="log.fat" inputmode="decimal" /></Field>
+      <Field label="摄入 kcal"><el-input v-model="log.intake" inputmode="numeric" /></Field>
+      <Field label="运动分钟"><el-input v-model="log.minutes" inputmode="numeric" /></Field>
+      <el-button class="primary" type="primary" native-type="submit" round>记下</el-button>
+    </form>
+  </section>
 </template>
 
 <script setup lang="ts">

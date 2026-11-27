@@ -30,8 +30,8 @@ import { useAuthStore } from '../../stores/auth';
 const auth = useAuthStore();
 const router = useRouter();
 const mode = ref<'login' | 'register'>('login');
-const email = ref('demo@zhaoxi.local');
-const password = ref('demo1234');
+const email = ref(import.meta.env.DEV ? 'demo@zhaoxi.local' : '');
+const password = ref(import.meta.env.DEV ? 'demo1234' : '');
 const name = ref('');
 const error = ref('');
 

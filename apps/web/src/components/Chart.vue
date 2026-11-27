@@ -3,13 +3,30 @@
 </template>
 
 <script setup lang="ts">
-import { BarChart, LineChart, PieChart } from 'echarts/charts';
-import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
+import { BarChart, HeatmapChart, LineChart, PieChart } from 'echarts/charts';
+import {
+  CalendarComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  VisualMapComponent,
+} from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { init, use, type ECharts, type EChartsCoreOption } from 'echarts/core';
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 
-use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+use([
+  BarChart,
+  HeatmapChart,
+  LineChart,
+  PieChart,
+  CalendarComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  VisualMapComponent,
+  CanvasRenderer,
+]);
 
 const props = withDefaults(defineProps<{ option: EChartsCoreOption; height?: string }>(), {
   height: '260px',

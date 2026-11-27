@@ -68,6 +68,47 @@ h2 {
 
 .error { color: var(--accent); }
 
+.state-art {
+  display: block;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+
+  &.sm { width: 88px; }
+  &.md { width: 120px; }
+  &.lg { width: 156px; }
+}
+
+.notice {
+  margin: 10px 0;
+
+  > p { margin: 0; }
+
+  &.error { color: var(--accent); }
+  &.muted { color: var(--muted); }
+
+  &.empty,
+  &.pictured {
+    margin: 14px 0;
+    padding: 28px 18px 24px;
+    border: 1px dashed var(--line);
+    border-radius: 16px;
+    background: rgba(255, 253, 248, 0.72);
+    color: var(--muted);
+    text-align: center;
+  }
+
+  &.pictured {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+
+    .state-art { margin: 0 auto; }
+  }
+}
+
 .empty {
   margin: 14px 0;
   padding: 28px 18px;
@@ -76,4 +117,77 @@ h2 {
   background: rgba(255, 253, 248, 0.72);
   color: var(--muted);
   text-align: center;
+}
+
+.remind-panel {
+  overflow: hidden;
+}
+
+.remind-stage {
+  position: relative;
+  min-height: 210px;
+  margin-top: 6px;
+  padding: 4px 4px 88px 2px;
+}
+
+.remind-bubbles {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  max-width: calc(100% - 76px);
+}
+
+.remind-lead {
+  position: relative;
+  margin: 0;
+  padding: 12px 14px;
+  background: #fff8ef;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 18px 18px 6px 18px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 6px 16px rgba(62, 42, 24, 0.05);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    bottom: -7px;
+    width: 12px;
+    height: 12px;
+    background: #fff8ef;
+    border-right: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    transform: rotate(45deg);
+  }
+}
+
+.remind-lines {
+  display: grid;
+  gap: 8px;
+  margin: 0 !important;
+  padding: 0;
+
+  li {
+    display: block !important;
+    margin: 0;
+    padding: 10px 12px !important;
+    border: 0 !important;
+    border-radius: 14px 14px 6px 14px;
+    background: rgba(255, 248, 239, 0.92);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+.remind-mascot {
+  position: absolute;
+  right: -6px;
+  bottom: -10px;
+  z-index: 0;
+  width: 118px !important;
+  max-width: 42%;
 }

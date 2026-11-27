@@ -1,14 +1,22 @@
 <template>
-  <section>
-    <p class="eyebrow">{{ today ? dateLabel(today.date) : '今天' }}</p>
-    <h1>今天，慢慢来</h1>
-    <p v-if="today" class="score"><strong>{{ today.score }}</strong><span> / 100</span></p>
-    <p v-if="today" class="quote">{{ today.quote }}</p>
+  <section class="today-page">
+    <PageHeading
+      plain
+      eyebrow="今日"
+      title="今天，慢慢来"
+      :note="today ? dateLabel(today.date) : undefined"
+    />
+    <div v-if="today" class="today-hero">
+      <p class="score"><strong>{{ today.score }}</strong><span> / 100</span></p>
+      <p class="quote">{{ today.quote }}</p>
+    </div>
 
+    <PageStatus :loading="loading" :error="loadError" :retry="refresh" />
+    <template v-if="!loading && !loadError">
     <TodayQuick
-      :categories="expenseCategories"
+      :categories="categories"
       :date="today?.date || ''"
-      :save-expense="addExpense"
+      :save-ledger="addLedger"
       :save-schedule="addSchedule"
       :save-body="addBody"
       :save-buy="addBuy"
@@ -25,7 +33,7 @@
     <Notice v-else text="正在把今天铺开。" kind="muted" />
 
     <div v-if="today" class="today-board">
-      <section class="panel">
+      <section class="panel tone-schedule">
         <div class="panel-head">
           <h2>待办清单</h2>
           <router-link to="/日程">查看全部</router-link>
@@ -33,59 +41,95 @@
         <ul v-if="today.schedule.items.length">
           <li v-for="item in today.schedule.items" :key="item.id">
             <div>
-              <strong>{{ item.title }}</strong>
+              <router-link class="task-link" :to="{ path: '/日程', query: { id: item.id } }">
+                <strong>{{ item.title }}</strong>
+              </router-link>
               <span>{{ [item.note, item.time].filter(Boolean).join(' · ') || (item.status === 'done' ? '已完成' : '今天') }}</span>
             </div>
-            <el-button text @click="finish(item)">{{ item.status === 'done' ? '已完成' : '完成' }}</el-button>
+            <el-button
+              :class="item.status === 'done' ? 'btn-soft' : ''"
+              :type="item.status === 'done' ? 'default' : 'primary'"
+              round
+              @click="finish(item)"
+            >{{ item.status === 'done' ? '已完成' : '完成' }}</el-button>
           </li>
         </ul>
-        <p v-else class="empty">今天还空着。</p>
+        <Notice v-else text="今天还空着。" kind="empty" />
       </section>
 
-      <section class="panel">
+      <section class="panel tone-habit">
         <div class="panel-head">
           <h2>习惯打卡</h2>
           <router-link to="/习惯">管理</router-link>
         </div>
-        <ul v-if="today.habits.items.length">
-          <li v-for="habit in today.habits.items" :key="habit.id">
-            <div>
+        <ul v-if="today.habits.items.length" class="habit-list">
+          <li v-for="habit in today.habits.items" :key="habit.id" class="habit-row">
+            <div class="habit-row-main">
               <strong>{{ habit.name }}</strong>
-              <span>{{ habitText(habit) }}</span>
+              <span class="habit-row-meta">{{ habitText(habit) }}</span>
             </div>
-            <el-button v-if="habit.kind === 'check'" text @click="check(habit)">
-              {{ habit.value >= habit.dailyTarget ? '已完成' : '打卡' }}
-            </el-button>
+            <div class="habit-row-action">
+              <el-button
+                v-if="habit.kind === 'check'"
+                class="habit-check-btn"
+                :type="habit.value >= habit.dailyTarget ? 'default' : 'primary'"
+                :class="habit.value >= habit.dailyTarget ? 'btn-soft is-done' : ''"
+                round
+                @click="check(habit)"
+              >
+                {{ habit.value >= habit.dailyTarget ? '已完成' : '打卡' }}
+              </el-button>
+              <div v-else-if="habit.kind === 'count'" class="habit-step">
+                <button type="button" class="habit-step-btn" aria-label="减少" @click="bump(habit, -1)">−</button>
+                <strong class="habit-step-val">{{ habit.value }}</strong>
+                <button type="button" class="habit-step-btn" aria-label="增加" @click="bump(habit, 1)">+</button>
+              </div>
+              <el-button v-else class="habit-check-btn" round @click="bump(habit, 1)">+1</el-button>
+            </div>
           </li>
         </ul>
-        <p v-else class="empty">还没有习惯。</p>
+        <Notice v-else text="还没有习惯。" kind="empty" />
       </section>
 
       <div class="today-split span">
-        <section class="panel">
+        <section class="panel tone-recent">
           <div class="panel-head">
             <h2>最近记录</h2>
             <router-link to="/时光档案">进入档案</router-link>
           </div>
-          <ul v-if="today.recent.length">
-            <li v-for="item in today.recent" :key="item.kind + item.id">
-              <em>{{ item.kind }}</em>
-              <div>
+          <ul v-if="today.recent.length" class="recent-list">
+            <li
+              v-for="item in today.recent"
+              :key="item.kind + item.id"
+              class="recent-row"
+              :data-tone="recentTone(item.kind)"
+            >
+              <span class="recent-kind">{{ item.kind }}</span>
+              <div class="recent-body">
                 <strong>{{ item.title }}</strong>
                 <span>{{ recentWhen(item.date) }} · {{ item.detail }}</span>
               </div>
-              <b>{{ item.value }}</b>
+              <b class="recent-value">{{ item.value }}</b>
             </li>
           </ul>
-          <p v-else class="empty">最近还没有记下什么。</p>
+          <Notice v-else text="最近还没有记下什么。" kind="empty" />
         </section>
 
-        <section class="panel">
+        <section class="panel remind-panel tone-remind">
           <div class="panel-head"><h2>轻提醒</h2></div>
-          <p v-for="line in reminders" :key="line">{{ line }}</p>
+          <div class="remind-stage">
+            <div class="remind-bubbles">
+              <p class="remind-lead">{{ moodLine }}</p>
+              <ul class="remind-lines">
+                <li v-for="line in reminders" :key="line">{{ line }}</li>
+              </ul>
+            </div>
+            <StateIllustration class="remind-mascot" :kind="moodKind" size="lg" />
+          </div>
         </section>
       </div>
     </div>
+    </template>
   </section>
 </template>
 
@@ -93,11 +137,13 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import Notice from '../../components/Notice.vue';
+import PageHeading from '../../components/PageHeading.vue';
 import StatGrid from '../../components/StatGrid.vue';
-import { centsFromYuan, centsFromYuanAllowZero, dateLabel, yuan } from '../../utils';
+import StateIllustration, { type StateKind } from '../../components/StateIllustration.vue';
+import { centsFromYuan, centsFromYuanAllowZero, confirmAction, dateLabel, yuan, zonedHour, zonedMonth } from '../../utils';
+import { armLocalReminder } from '../../utils/notify';
 import { createBuyItem, createSchedule, createTransaction, fetchSeries, fetchSummary, fetchToday, listCategories, saveBodyLog, saveHabitLog, scheduleLocalToIso, updateSchedule, type Category, type FinanceSummary, type FitnessSeries, type TodayHabit, type TodayOverview, type TodayTask } from '../../http/api';
-
-import { confirmAction } from '../../utils';
+import PageStatus from '../../components/PageStatus.vue';
 import TodayCharts from './TodayCharts.vue';
 import TodayQuick from './TodayQuick.vue';
 
@@ -107,8 +153,9 @@ const categories = ref<Category[]>([]);
 const summary = ref<FinanceSummary | null>(null);
 const series = ref<FitnessSeries | null>(null);
 const error = ref('');
+const loading = ref(true);
+const loadError = ref('');
 
-const expenseCategories = computed(() => categories.value.filter((item) => item.kind === 'expense'));
 const stats = computed(() => {
   if (!today.value) return [];
   const remaining = today.value.finance.remainingCents;
@@ -137,17 +184,25 @@ watch(
 );
 
 async function refresh() {
-  const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date()).slice(0, 7);
-  const [nextToday, nextCategories, nextSummary, nextSeries] = await Promise.all([
-    fetchToday(),
-    listCategories(),
-    fetchSummary(month),
-    fetchSeries(),
-  ]);
-  today.value = nextToday;
-  categories.value = nextCategories;
-  summary.value = nextSummary;
-  series.value = nextSeries;
+  loading.value = true;
+  loadError.value = '';
+  try {
+    const month = zonedMonth();
+    const [nextToday, nextCategories, nextSummary, nextSeries] = await Promise.all([
+      fetchToday(),
+      listCategories(),
+      fetchSummary(month),
+      fetchSeries(),
+    ]);
+    today.value = nextToday;
+    categories.value = nextCategories;
+    summary.value = nextSummary;
+    series.value = nextSeries;
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : '加载失败';
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function run(action: () => Promise<void>) {
@@ -161,7 +216,7 @@ async function run(action: () => Promise<void>) {
   }
 }
 
-function addExpense(payload: { amount: string; categoryId: string; note: string }) {
+function addLedger(payload: { direction: 'income' | 'expense'; amount: string; categoryId: string; note: string }) {
   const amountCents = centsFromYuan(payload.amount);
   if (!amountCents || !today.value) {
     error.value = '请填写大于 0 的金额';
@@ -169,7 +224,7 @@ function addExpense(payload: { amount: string; categoryId: string; note: string 
   }
   return run(() => createTransaction({
     occurredOn: today.value!.date,
-    direction: 'expense',
+    direction: payload.direction,
     amountCents,
     categoryId: payload.categoryId,
     note: payload.note,
@@ -182,13 +237,16 @@ function addSchedule(payload: { title: string; dueOn: string; remindAt: string; 
     error.value = '提醒时间格式不正确';
     return Promise.reject(new Error(error.value));
   }
-  return run(() => createSchedule({
-    title: payload.title,
-    dueOn: payload.dueOn,
-    note: payload.note,
-    remindAt,
-    allDay: true,
-  }));
+  return run(async () => {
+    await createSchedule({
+      title: payload.title,
+      dueOn: payload.dueOn,
+      note: payload.note,
+      remindAt,
+      allDay: true,
+    });
+    if (remindAt) armLocalReminder(payload.title, remindAt);
+  });
 }
 
 function addBody(payload: { weight: string; intake: string }) {
@@ -215,6 +273,36 @@ const reminders = computed(() => {
   return lines;
 });
 
+const moodKind = computed<StateKind>(() => {
+  if (!today.value) return 'empty';
+  const hour = zonedHour();
+  const { schedule, habits } = today.value;
+  const habitsPending = !!habits.total && habits.done < habits.total;
+  const tasksOpen = schedule.items.some((item) => item.status !== 'done') || schedule.todayOpen > 0;
+  const overdue = schedule.overdue > 0;
+  const allDone = !!habits.total && !habitsPending && !tasksOpen && !overdue;
+
+  if (hour >= 21 || hour < 5) return 'night';
+  if (allDone) return 'done';
+  if (habitsPending || overdue || tasksOpen) return 'remind';
+  return 'rest';
+});
+
+const moodLine = computed(() => {
+  switch (moodKind.value) {
+    case 'night':
+      return '夜深了，未完的事可以留到明天。';
+    case 'done':
+      return '今天该做的都安顿好了，很好。';
+    case 'remind':
+      return '还有一点小事，顺手记一下就好。';
+    case 'rest':
+      return '今天很轻，留一点空白也好。';
+    default:
+      return '今天，慢慢来。';
+  }
+});
+
 function habitText(habit: TodayHabit) {
   if (habit.kind === 'check') return habit.value >= habit.dailyTarget ? '今天已完成' : '待打卡';
   return `${habit.value} / ${habit.dailyTarget}${habit.unit ? ` ${habit.unit}` : ''}`;
@@ -225,6 +313,16 @@ function recentWhen(date: string) {
   if (date === today.value.date) return '今天';
   const [, month, day] = date.split('-');
   return `${Number(month)} 月 ${Number(day)} 日`;
+}
+
+function recentTone(kind: string) {
+  if (kind.includes('账') || kind.includes('支出') || kind.includes('收入')) return 'ledger';
+  if (kind.includes('日程') || kind.includes('待办')) return 'schedule';
+  if (kind.includes('习惯')) return 'habit';
+  if (kind.includes('体重') || kind.includes('健身') || kind.includes('身体')) return 'fitness';
+  if (kind.includes('买') || kind.includes('购')) return 'buy';
+  if (kind.includes('书') || kind.includes('影') || kind.includes('音') || kind.includes('收藏')) return 'media';
+  return 'plain';
 }
 
 async function finish(item: TodayTask) {
@@ -248,6 +346,12 @@ async function check(habit: TodayHabit) {
   );
   if (!ok) return;
   await run(() => saveHabitLog(habit.id, today.value!.date, done ? habit.dailyTarget : 0));
+}
+
+async function bump(habit: TodayHabit, delta: number) {
+  if (!today.value) return;
+  const next = Math.max(0, Number((habit.value + delta).toFixed(2)));
+  await run(() => saveHabitLog(habit.id, today.value!.date, next));
 }
 
 function addBuy(payload: { title: string; amount: string }) {

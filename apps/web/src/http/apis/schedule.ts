@@ -7,6 +7,7 @@ export interface ScheduleItem {
   status: 'open' | 'done';
   note: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   remindAt?: string | null;
   allDay?: boolean;
 }
@@ -23,6 +24,8 @@ export type ScheduleWrite = {
   note?: string;
   remindAt?: string;
   allDay?: boolean;
+  startsAt?: string;
+  endsAt?: string;
 };
 
 export function fetchSchedule() {
@@ -33,7 +36,18 @@ export function createSchedule(body: ScheduleWrite) {
   return request('/api/schedule', { method: 'POST', json: body });
 }
 
-export function updateSchedule(id: string, body: { status: 'open' | 'done' }) {
+export type SchedulePatch = {
+  title?: string;
+  dueOn?: string;
+  status?: 'open' | 'done';
+  note?: string;
+  remindAt?: string | null;
+  allDay?: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
+};
+
+export function updateSchedule(id: string, body: SchedulePatch) {
   return request(`/api/schedule/${id}`, { method: 'PATCH', json: body });
 }
 
@@ -50,6 +64,13 @@ export function scheduleLocalToIso(value?: string) {
   return date.toISOString();
 }
 
+/** 日期 + HH:mm → ISO。 */
+export function scheduleDateTimeLocal(dueOn: string, hm?: string) {
+  const time = hm?.trim();
+  if (!dueOn || !time) return undefined;
+  return scheduleLocalToIso(`${dueOn}T${time}`);
+}
+
 export function scheduleClock(iso?: string | null) {
   if (!iso) return '';
   const date = new Date(iso);
@@ -59,4 +80,13 @@ export function scheduleClock(iso?: string | null) {
     minute: '2-digit',
     hour12: false,
   }).format(date);
+}
+
+/** ISO → 表单用的本地 YYYY-MM-DDTHH:mm。 */
+export function scheduleIsoToLocal(iso?: string | null) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

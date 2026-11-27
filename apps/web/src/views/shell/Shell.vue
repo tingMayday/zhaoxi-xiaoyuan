@@ -2,7 +2,8 @@
   <div class="shell">
     <SideRail :name="auth.user?.name || '个人日常'" :groups="groups" @exit="exit" />
     <main class="page">
-      <router-view v-slot="{ Component, route }">
+      <div v-if="!ready" class="page-status muted">正在打开…</div>
+      <router-view v-else v-slot="{ Component, route }">
         <transition mode="out-in" enter-active-class="animate__animated animate__fadeInUp animate__faster">
           <component :is="Component" :key="route.path" />
         </transition>
@@ -13,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import SideRail from './SideRail.vue';
@@ -21,6 +22,7 @@ import TabBar from './TabBar.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
+const ready = ref(false);
 const groups = [
   { label: '', items: [{ to: '/今日', label: '今日总览', icon: 'home' }] },
   {
@@ -43,8 +45,9 @@ const groups = [
   },
 ];
 
-onMounted(() => {
-  auth.fetchMe().catch(() => undefined);
+onMounted(async () => {
+  await auth.fetchMe().catch(() => undefined);
+  ready.value = true;
 });
 
 function exit() {

@@ -1,12 +1,14 @@
 <template>
-  <h2>目标</h2>
-  <form class="row" @submit.prevent="submit">
-    <Field label="起点 kg"><el-input v-model="profile.start" inputmode="decimal" /></Field>
-    <Field label="目标 kg"><el-input v-model="profile.target" inputmode="decimal" /></Field>
-    <Field label="开始日期"><el-date-picker v-model="profile.startDate" type="date" value-format="YYYY-MM-DD" /></Field>
-    <Field label="目标摄入"><el-input v-model="profile.intake" inputmode="numeric" /></Field>
-    <el-button class="primary" type="primary" native-type="submit" round>保存目标</el-button>
-  </form>
+  <section class="surface tone-weight">
+    <div class="panel-head"><h2>目标</h2></div>
+    <form class="row" @submit.prevent="submit">
+      <Field label="起点 kg"><el-input v-model="profile.start" inputmode="decimal" /></Field>
+      <Field label="目标 kg"><el-input v-model="profile.target" inputmode="decimal" /></Field>
+      <Field label="开始日期"><el-date-picker v-model="profile.startDate" type="date" value-format="YYYY-MM-DD" /></Field>
+      <Field label="目标摄入"><el-input v-model="profile.intake" inputmode="numeric" /></Field>
+      <el-button class="primary" type="primary" native-type="submit" round>保存目标</el-button>
+    </form>
+  </section>
 </template>
 
 <script setup lang="ts">

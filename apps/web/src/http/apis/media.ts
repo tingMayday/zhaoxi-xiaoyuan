@@ -39,8 +39,22 @@ export function fetchMediaStats() {
   return request<MediaStats>('/api/media/stats');
 }
 
+export type MediaPatch = {
+  kind?: MediaKind;
+  title?: string;
+  creator?: string;
+  coverUrl?: string;
+  status?: MediaStatus;
+  rating?: number | null;
+  note?: string;
+};
+
 export function createMedia(body: NewMedia) {
   return request('/api/media', { method: 'POST', json: body });
+}
+
+export function updateMedia(id: string, body: MediaPatch) {
+  return request(`/api/media/${id}`, { method: 'PATCH', json: body });
 }
 
 export function removeMedia(id: string) {
